@@ -430,8 +430,8 @@ html, body {
 /* ===== MODE TOGGLE ===== */
 #mode-btn {
   position: fixed;
-  bottom: 16px;
-  left: 16px;
+  top: 56px;
+  right: 16px;
   z-index: 50;
   background: var(--surface);
   border: 1px solid var(--accent-dim);

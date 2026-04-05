@@ -831,6 +831,8 @@ const LERP_SPEED         = 0.08;
 
 let touchStartY    = 0;
 let lastTouchY     = 0;
+let touchStartX    = 0;
+let lastTouchX     = 0;
 let touchVelocity  = 0;    // px/frame momentum
 let lastTouchTime  = 0;
 let momentumRaf    = null;
@@ -847,6 +849,8 @@ function onWheel(e) {
 function onTouchStart(e) {
   touchStartY   = e.touches[0].clientY;
   lastTouchY    = touchStartY;
+  touchStartX   = e.touches[0].clientX;
+  lastTouchX    = touchStartX;
   lastTouchTime = Date.now();
   touchVelocity = 0;
   clearTimeout(scrollIdleTimer);
@@ -861,12 +865,16 @@ function onTouchMove(e) {
   e.preventDefault();
   const now = Date.now();
   const dy = e.touches[0].clientY - lastTouchY;
+  const dx = e.touches[0].clientX - lastTouchX;
   const dt = Math.max(1, now - lastTouchTime);
+  // Combine vertical and horizontal — horizontal swipe left moves forward
+  const delta = dy - dx;
   // Track velocity in px/ms
-  touchVelocity = dy / dt;
+  touchVelocity = delta / dt;
   lastTouchY    = e.touches[0].clientY;
+  lastTouchX    = e.touches[0].clientX;
   lastTouchTime = now;
-  targetCameraX += dy * TOUCH_SENSITIVITY;
+  targetCameraX += delta * TOUCH_SENSITIVITY;
   clampTarget();
 }
 
