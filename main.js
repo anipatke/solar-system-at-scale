@@ -283,7 +283,8 @@ const TOTAL_AU = PLANETS[PLANETS.length - 1].distanceAU + 4;
 // diameterKm: moon diameter (km)
 // navOrbitMult: orbital radius as multiple of parent's navigable radius
 // navRadius: dot size in navigable mode (px)
-// True-size orbit/radius derived from Sun diameter (695,700 km = canvasH/2 px)
+// True-size orbit uses the same km→px distance scale as the rest of the scene.
+// True-size moon diameter still derives from the rendered Sun size so moons remain visible.
 const SUN_ACTUAL_R_KM = 695_700;
 
 const MOONS = [
@@ -474,7 +475,7 @@ function drawMoons(dt) {
 
     // Orbital radius: lerp navigable ↔ true-size
     const navOrbitPx  = moon.navOrbitMult * BASE_PLANET_RADIUS[moon.parentId];
-    const trueOrbitPx = moon.orbitalKm / SUN_ACTUAL_R_KM * (canvasH / 2);
+    const trueOrbitPx = moon.orbitalKm / AU_KM * PIXELS_PER_AU;
     const orbitPx = navOrbitPx + (trueOrbitPx - navOrbitPx) * modeTransition;
 
     // Moon display radius
