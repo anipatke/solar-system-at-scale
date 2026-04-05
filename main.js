@@ -278,6 +278,42 @@ const PLANETS = [
 // Total scroll distance in AU (Pluto + some breathing room)
 const TOTAL_AU = PLANETS[PLANETS.length - 1].distanceAU + 4;
 
+// ── MOON DATA ────────────────────────────────────────────────
+// orbitalKm: distance from planet center (km)
+// diameterKm: moon diameter (km)
+// navOrbitMult: orbital radius as multiple of parent's navigable radius
+// navRadius: dot size in navigable mode (px)
+// True-size orbit/radius derived from Sun diameter (695,700 km = canvasH/2 px)
+const SUN_ACTUAL_R_KM = 695_700;
+
+const MOONS = [
+  // Earth
+  { id: 'moon',     parentId: 'earth',   name: 'MOON',     orbitalKm: 384_400,   diameterKm: 3_474, navOrbitMult: 2.5, navRadius: 4, color: '#B0BEC5', retrograde: false, orbitalPeriodDays: 27.32 },
+  // Mars
+  { id: 'phobos',   parentId: 'mars',    name: 'PHOBOS',   orbitalKm: 9_376,     diameterKm: 22,    navOrbitMult: 1.8, navRadius: 2, color: '#8D6E63', retrograde: false, orbitalPeriodDays: 0.319 },
+  { id: 'deimos',   parentId: 'mars',    name: 'DEIMOS',   orbitalKm: 23_458,    diameterKm: 12,    navOrbitMult: 2.8, navRadius: 2, color: '#795548', retrograde: false, orbitalPeriodDays: 1.263 },
+  // Jupiter — Galilean moons
+  { id: 'io',       parentId: 'jupiter', name: 'IO',       orbitalKm: 421_700,   diameterKm: 3_643, navOrbitMult: 1.6, navRadius: 4, color: '#F4CF47', retrograde: false, orbitalPeriodDays: 1.769 },
+  { id: 'europa',   parentId: 'jupiter', name: 'EUROPA',   orbitalKm: 671_100,   diameterKm: 3_122, navOrbitMult: 2.3, navRadius: 3, color: '#CFB99A', retrograde: false, orbitalPeriodDays: 3.551 },
+  { id: 'ganymede', parentId: 'jupiter', name: 'GANYMEDE', orbitalKm: 1_070_400, diameterKm: 5_268, navOrbitMult: 3.5, navRadius: 5, color: '#9E9E9E', retrograde: false, orbitalPeriodDays: 7.155 },
+  { id: 'callisto', parentId: 'jupiter', name: 'CALLISTO', orbitalKm: 1_882_700, diameterKm: 4_821, navOrbitMult: 5.0, navRadius: 4, color: '#616161', retrograde: false, orbitalPeriodDays: 16.69 },
+  // Saturn
+  { id: 'rhea',     parentId: 'saturn',  name: 'RHEA',     orbitalKm: 527_108,   diameterKm: 1_528, navOrbitMult: 2.5, navRadius: 3, color: '#CFD8DC', retrograde: false, orbitalPeriodDays: 4.518 },
+  { id: 'titan',    parentId: 'saturn',  name: 'TITAN',    orbitalKm: 1_221_870, diameterKm: 5_149, navOrbitMult: 3.8, navRadius: 5, color: '#E8A84E', retrograde: false, orbitalPeriodDays: 15.95 },
+  // Uranus
+  { id: 'titania',  parentId: 'uranus',  name: 'TITANIA',  orbitalKm: 435_910,   diameterKm: 1_578, navOrbitMult: 2.5, navRadius: 3, color: '#80DEEA', retrograde: false, orbitalPeriodDays: 8.706 },
+  { id: 'oberon',   parentId: 'uranus',  name: 'OBERON',   orbitalKm: 583_520,   diameterKm: 1_523, navOrbitMult: 3.5, navRadius: 3, color: '#4DD0E1', retrograde: false, orbitalPeriodDays: 13.46 },
+  // Neptune
+  { id: 'triton',   parentId: 'neptune', name: 'TRITON',   orbitalKm: 354_759,   diameterKm: 2_707, navOrbitMult: 2.2, navRadius: 4, color: '#5C6BC0', retrograde: true,  orbitalPeriodDays: 5.877 },
+  // Pluto
+  { id: 'charon',   parentId: 'pluto',   name: 'CHARON',   orbitalKm: 19_591,    diameterKm: 1_212, navOrbitMult: 2.2, navRadius: 3, color: '#A1887F', retrograde: false, orbitalPeriodDays: 6.387 },
+];
+
+// ── ASTEROID BELT ────────────────────────────────────────────
+// Main belt: 2.2–3.2 AU from the Sun
+const BELT_INNER_AU = 2.2;
+const BELT_OUTER_AU = 3.2;
+
 // ── STATE ────────────────────────────────────────────────────
 let cameraX = 0;           // current horizontal scroll offset in pixels
 let targetCameraX = 0;     // smooth scroll target
@@ -285,7 +321,9 @@ let totalScrollPx = 0;     // total canvas width in pixels
 let canvasW = 0;
 let canvasH = 0;
 let stars = [];
-let rotations = {};        // { planetId: angle }
+let rotations   = {};      // { planetId: angle }
+let moonAngles  = {};      // { moonId: angle }
+let beltParticles = [];    // asteroid belt dots
 let activePlanet = null;   // currently shown in info panel
 let introGone = false;
 let closingShown = false;
@@ -294,6 +332,8 @@ let isMuted = false;
 let lastFrameTime = 0;
 let scrollIdleTimer = null;  // timer to detect scroll stop
 let isSnapping = false;      // currently auto-centering a planet
+let snappingTo  = null;      // which planet is being snapped to
+let snapZoom    = 0;         // 0→1 animated zoom when locked onto a planet
 let trueSize = true;         // true = TRUE SIZE mode, false = NAVIGABLE
 let modeTransition = 1.0;   // 0 = navigable, 1 = true size (lerps between)
 
@@ -333,6 +373,8 @@ function init() {
   buildStars();
   buildRulerNotches();
   initRotations();
+  initMoonAngles();
+  buildBelt();
   populateClosingCard();
   requestAnimationFrame(loop);
 }
@@ -345,6 +387,25 @@ function resize() {
 
 function initRotations() {
   PLANETS.forEach(p => { rotations[p.id] = 0; });
+}
+
+function initMoonAngles() {
+  MOONS.forEach(m => { moonAngles[m.id] = Math.random() * Math.PI * 2; });
+}
+
+function buildBelt() {
+  beltParticles = [];
+  for (let i = 0; i < 320; i++) {
+    // Slight clustering: bias samples toward the inner belt
+    const t = Math.random();
+    const au = BELT_INNER_AU + t * (BELT_OUTER_AU - BELT_INNER_AU);
+    beltParticles.push({
+      worldX:   au * PIXELS_PER_AU,
+      yFrac:    (Math.random() - 0.5) * 2,   // -1..1, scaled by spread at draw time
+      size:     0.5 + Math.random() * 1.5,
+      opacity:  0.2 + Math.random() * 0.45,
+    });
+  }
 }
 
 // ── STARS ────────────────────────────────────────────────────
@@ -376,6 +437,67 @@ function drawStars(dt) {
     ctx.beginPath();
     ctx.arc(sx, sy, s.r, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(240,230,218,${alpha})`;
+    ctx.fill();
+  });
+}
+
+function drawBelt() {
+  const maxSpread = canvasH * 0.11;
+  beltParticles.forEach(p => {
+    const sx = p.worldX - cameraX + canvasW * 0.2;
+    if (sx < -4 || sx > canvasW + 4) return;
+    const sy = canvasH / 2 + p.yFrac * maxSpread;
+    const dispSize = p.size * (1 - modeTransition * 0.4);  // slightly smaller in true-size
+    ctx.beginPath();
+    ctx.arc(sx, sy, Math.max(0.4, dispSize), 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(160,145,115,${p.opacity})`;
+    ctx.fill();
+  });
+}
+
+function drawMoons(dt) {
+  const yComp = 0.4;  // vertical compression for orbital perspective
+
+  MOONS.forEach(moon => {
+    const parent = PLANETS.find(p => p.id === moon.parentId);
+    const parentX = planetScreenX(parent);
+    const parentY = planetScreenY();
+
+    // Skip if parent planet is way off-screen (orbit ring + dot would be invisible anyway)
+    if (parentX < -canvasW || parentX > canvasW * 2) return;
+
+    // Advance orbital angle — 1 real second ≈ 1 simulated day
+    const dir = moon.retrograde ? -1 : 1;
+    moonAngles[moon.id] += dir * (2 * Math.PI) / moon.orbitalPeriodDays / 1000 * dt;
+
+    const angle = moonAngles[moon.id];
+
+    // Orbital radius: lerp navigable ↔ true-size
+    const navOrbitPx  = moon.navOrbitMult * BASE_PLANET_RADIUS[moon.parentId];
+    const trueOrbitPx = moon.orbitalKm / SUN_ACTUAL_R_KM * (canvasH / 2);
+    const orbitPx = navOrbitPx + (trueOrbitPx - navOrbitPx) * modeTransition;
+
+    // Moon display radius
+    const trueMoonR  = Math.max(0.8, (moon.diameterKm / 2) / SUN_ACTUAL_R_KM * (canvasH / 2));
+    const moonDispR  = moon.navRadius + (trueMoonR - moon.navRadius) * modeTransition;
+
+    // Orbit ring (faint ellipse centered on parent)
+    ctx.save();
+    ctx.translate(parentX, parentY);
+    ctx.scale(1, yComp);
+    ctx.beginPath();
+    ctx.arc(0, 0, orbitPx, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(240,230,218,0.09)';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+    ctx.restore();
+
+    // Moon dot
+    const moonX = parentX + Math.cos(angle) * orbitPx;
+    const moonY = parentY + Math.sin(angle) * orbitPx * yComp;
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, Math.max(0.8, moonDispR), 0, Math.PI * 2);
+    ctx.fillStyle = moon.color;
     ctx.fill();
   });
 }
@@ -431,6 +553,12 @@ function drawPlanet(planet, dt) {
       const t = 1 - (dist / zoomRange);
       displayR = r * (1 + t * 1.2 * zoomStrength);
     }
+  }
+
+  // Snap zoom — planet swells to fill more screen when locked in (skip Sun, it's already huge)
+  if (planet === snappingTo && planet.id !== 'sun' && snapZoom > 0.01) {
+    // Scale up by up to 80% — feels significant without being jarring
+    displayR *= (1 + snapZoom * 0.8);
   }
 
   const tilt = (planet.tiltDeg * Math.PI) / 180;
@@ -671,8 +799,11 @@ function drawBandedPlanet(planet, r, rot) {
 }
 
 function drawSaturnRings(planet, r, tilt, frontHalf) {
-  // Rings drawn in planet-local coords (after ctx.translate to planet center)
-  // tilt is already applied by parent save/rotate
+  // Rings drawn in planet-local coords (translate already applied by caller).
+  // Two passes: back half (behind planet body), then front half (in front).
+  // Each ring is a proper annular arc — outer edge to inner edge, closed path.
+  // Front rings are clipped to exclude the planet body, which in y-compressed
+  // space maps to an ellipse with a=r, b=r/0.3.
 
   const ringDefs = [
     { inner: 1.35, outer: 1.65, color: planet.colors.ring1 },
@@ -682,22 +813,40 @@ function drawSaturnRings(planet, r, tilt, frontHalf) {
 
   ctx.save();
   ctx.rotate(tilt);
-  // Flatten rings into an ellipse (perspective)
-  ctx.scale(1, 0.3);
+  ctx.scale(1, 0.3);   // flatten into perspective ellipse
+
+  if (frontHalf) {
+    // Clip to bottom half of space (y > 0), excluding the planet body.
+    // In this y-scaled coord system the planet screen-circle (radius r) is
+    // a tall ellipse: a_x = r, a_y = r / 0.3
+    const clipBound = ringDefs[ringDefs.length - 1].outer * r * 2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(-clipBound, 0, clipBound * 2, clipBound);   // bottom half
+    ctx.ellipse(0, 0, r, r / 0.3, 0, 0, Math.PI * 2);   // planet body to subtract
+    ctx.clip('evenodd');
+  }
 
   ringDefs.forEach(ring => {
     const innerR = ring.inner * r;
     const outerR = ring.outer * r;
-    // Draw as annular arc
     ctx.beginPath();
-    ctx.arc(0, 0, outerR, frontHalf ? Math.PI : 0, frontHalf ? Math.PI * 2 : Math.PI);
-    ctx.arc(0, 0, innerR, frontHalf ? Math.PI : Math.PI, frontHalf ? 0 : 0, !frontHalf);
+    if (frontHalf) {
+      // Bottom half (y > 0) — visually in front of planet
+      ctx.arc(0, 0, outerR, 0, Math.PI, false);    // CW outer arc, bottom
+      ctx.arc(0, 0, innerR, Math.PI, 0, true);     // CCW inner arc, bottom reversed
+    } else {
+      // Top half (y < 0) — visually behind planet
+      ctx.arc(0, 0, outerR, Math.PI, 0, false);    // CW outer arc, top
+      ctx.arc(0, 0, innerR, 0, Math.PI, true);     // CCW inner arc, top reversed
+    }
     ctx.closePath();
     ctx.fillStyle = ring.color;
     ctx.fill();
   });
 
-  ctx.restore();
+  if (frontHalf) ctx.restore();   // remove clip
+  ctx.restore();                   // remove rotate + scale
 }
 
 function drawPlanetLabel(planet, r) {
@@ -814,13 +963,15 @@ function populateClosingCard() {
 }
 
 function checkClosingCard() {
-  if (closingShown) return;
-  // Show once we've scrolled fully past Pluto
   const plutoPx = PLANETS[PLANETS.length - 1].distanceAU * PIXELS_PER_AU;
   const plutoScreenX = plutoPx - cameraX + canvasW * 0.2;
-  if (plutoScreenX < canvasW * 0.1) {
+  const pastPluto = plutoScreenX < canvasW * 0.1;
+  if (pastPluto && !closingShown) {
     closingShown = true;
     closingCard.classList.add('visible');
+  } else if (!pastPluto && closingShown) {
+    closingShown = false;
+    closingCard.classList.remove('visible');
   }
 }
 
@@ -838,7 +989,6 @@ let lastTouchTime  = 0;
 let momentumRaf    = null;
 
 function onWheel(e) {
-  if (closingShown) return;
   dismissIntro();
   e.preventDefault();
   targetCameraX += e.deltaY * SCROLL_SENSITIVITY;
@@ -860,7 +1010,6 @@ function onTouchStart(e) {
 }
 
 function onTouchMove(e) {
-  if (closingShown) return;
   dismissIntro();
   e.preventDefault();
   const now = Date.now();
@@ -879,7 +1028,6 @@ function onTouchMove(e) {
 }
 
 function onTouchEnd() {
-  if (closingShown) return;
   // Launch momentum scroll from flick velocity
   const initialVelocity = touchVelocity * TOUCH_SENSITIVITY * 16; // scale to px/frame at 60fps
   applyMomentum(initialVelocity);
@@ -904,8 +1052,6 @@ function clampTarget() {
 
 // Snap camera so a planet sits exactly at screen center
 function snapToNearestPlanet() {
-  if (closingShown) return;
-
   const cx = canvasW * 0.5;
   let nearest = null;
   let nearestDist = Infinity;
@@ -928,12 +1074,14 @@ function snapToNearestPlanet() {
     const snapTarget = nearest.distanceAU * PIXELS_PER_AU + canvasW * 0.2 - cx;
     targetCameraX = Math.max(0, snapTarget);
     isSnapping = true;
+    snappingTo = nearest;
   }
 }
 
 function scheduleSnap() {
   clearTimeout(scrollIdleTimer);
   isSnapping = false;
+  snappingTo = null;
   scrollIdleTimer = setTimeout(snapToNearestPlanet, 350);
 }
 
@@ -977,6 +1125,9 @@ function loop(ts) {
   // Smooth camera
   cameraX += (targetCameraX - cameraX) * LERP_SPEED;
 
+  // Animate snap zoom — eases in when locked, eases out when scrolling away
+  snapZoom += ((isSnapping ? 1 : 0) - snapZoom) * 0.06;
+
   // Animate mode transition (0 = navigable, 1 = true size)
   const targetMode = trueSize ? 1.0 : 0.0;
   modeTransition += (targetMode - modeTransition) * 0.06;
@@ -989,8 +1140,14 @@ function loop(ts) {
   // Draw stars
   drawStars(dt);
 
+  // Asteroid belt (behind planets)
+  drawBelt();
+
   // Draw planets
   PLANETS.forEach(p => drawPlanet(p, dt));
+
+  // Draw moons (on top of planets so they're visible against planet bodies)
+  drawMoons(dt);
 
   // Update HUD
   updateRuler();
