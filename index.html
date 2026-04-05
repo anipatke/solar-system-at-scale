@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solar System at Scale</title>
+  <meta name="description" content="Scroll through the solar system at true proportional scale. Distances are real. The emptiness is the point." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Space+Mono:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Scale ruler HUD -->
+  <div id="ruler">
+    <div id="ruler-track">
+      <div id="ruler-needle"></div>
+      <div id="ruler-planets"></div>
+    </div>
+    <div id="ruler-readout">
+      <span id="ruler-km">0 km</span>
+      <span id="ruler-light">0 light-minutes</span>
+    </div>
+  </div>
+
+  <!-- Mute button -->
+  <button id="mute-btn" aria-label="Toggle sound">
+    <span id="mute-icon">♪</span>
+  </button>
+
+  <!-- Opening tagline -->
+  <div id="intro">
+    <div id="intro-inner">
+      <p class="intro-sub">VIBE LAB PRESENTS</p>
+      <h1 id="intro-title">SOLAR SYSTEM<br/>AT SCALE</h1>
+      <p id="intro-tagline">If the Sun were this big&mdash;<br/>Pluto would be <em>a long way away.</em></p>
+      <p id="intro-hint">↓ SCROLL TO BEGIN</p>
+    </div>
+  </div>
+
+  <!-- Main canvas -->
+  <canvas id="space"></canvas>
+
+  <!-- Info panel -->
+  <div id="info-panel">
+    <div id="info-inner">
+      <div id="info-header">
+        <span id="info-symbol"></span>
+        <div>
+          <h2 id="info-name"></h2>
+          <p id="info-type"></p>
+        </div>
+      </div>
+      <div id="info-facts">
+        <div class="fact">
+          <span class="fact-icon">🌍</span>
+          <div>
+            <span class="fact-label">SIZE</span>
+            <span class="fact-value" id="fact-size"></span>
+          </div>
+        </div>
+        <div class="fact">
+          <span class="fact-icon">✈️</span>
+          <div>
+            <span class="fact-label">COMMERCIAL FLIGHT</span>
+            <span class="fact-value" id="fact-flight"></span>
+          </div>
+        </div>
+        <div class="fact">
+          <span class="fact-icon">👃</span>
+          <div>
+            <span class="fact-label">SMELLS LIKE</span>
+            <span class="fact-value" id="fact-smell"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Closing card -->
+  <div id="closing-card">
+    <div id="closing-inner">
+      <h2>YOU MADE IT TO PLUTO.</h2>
+      <p class="closing-sub">But space doesn't stop here.</p>
+      <div class="closing-stat">
+        <span class="closing-label">OORT CLOUD (INNER EDGE)</span>
+        <span class="closing-val" id="close-oort-inner"></span>
+      </div>
+      <div class="closing-stat">
+        <span class="closing-label">OORT CLOUD (OUTER EDGE)</span>
+        <span class="closing-val" id="close-oort-outer"></span>
+      </div>
+      <div class="closing-stat">
+        <span class="closing-label">PROXIMA CENTAURI</span>
+        <span class="closing-val" id="close-proxima"></span>
+      </div>
+      <p class="closing-kicker">The universe does not care about your scroll wheel.</p>
+      <a class="closing-back" href="https://anipatke.com.au" target="_parent">← BACK TO VIBE LAB</a>
+    </div>
+  </div>
+
+  <!-- Mode toggle -->
+  <button id="mode-btn" aria-label="Toggle size mode">
+    <span id="mode-label">TRUE SIZE</span>
+    <span id="mode-sub">SWITCH TO NAVIGABLE</span>
+  </button>
+
+  <!-- Scanline overlay -->
+  <div id="scanlines"></div>
+
+  <!-- Hidden audio -->
+  <audio id="ambient" loop preload="auto">
+    <source src="audio/ambient.wav" type="audio/wav" />
+    <source src="audio/ambient.mp3" type="audio/mpeg" />
+  </audio>
+
+  <script src="main.js"></script>
+</body>
+</html>
