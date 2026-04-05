@@ -311,6 +311,57 @@ const ASTEROID_BELT = {
   },
 };
 
+const PROBES = [
+  {
+    id: 'parker',
+    name: 'PARKER SOLAR PROBE',
+    symbol: '△',
+    type: 'SOLAR PROBE',
+    distanceAU: 0.09,
+    facts: {
+      size: 'About hatchback-length, but far flatter and wider',
+      flight: 'Mission: study the Sun up close / Launched: August 12, 2018',
+      smell: 'Overcaffeinated. Very hot. Still committed to the bit.',
+    },
+  },
+  {
+    id: 'solar-orbiter',
+    name: 'SOLAR ORBITER',
+    symbol: '◇',
+    type: 'HELIOPHYSICS PROBE',
+    distanceAU: 0.29,
+    facts: {
+      size: 'A bit wider than a hatchback once the solar arrays are counted',
+      flight: 'Mission: image the Sun and heliosphere / Launched: February 10, 2020',
+      smell: 'Busy, sunstruck, and trying to keep every instrument pointed right.',
+    },
+  },
+  {
+    id: 'osiris-apex',
+    name: 'OSIRIS-APEX',
+    symbol: '◆',
+    type: 'ASTEROID MISSION',
+    distanceAU: 0.50,
+    facts: {
+      size: 'Roughly hatchback-scale, with very non-hatchback solar wings',
+      flight: 'Mission: retargeted from Bennu to Apophis / Launched: September 8, 2016',
+      smell: 'Slightly smug. Already pulled off one asteroid job and wants another.',
+    },
+  },
+  {
+    id: 'juno',
+    name: 'JUNO',
+    symbol: '▴',
+    type: 'JUPITER ORBITER',
+    distanceAU: 5.203,
+    facts: {
+      size: 'Closer to SUV span than hatchback once the panels are out',
+      flight: 'Mission: orbit and study Jupiter / Launched: August 5, 2011',
+      smell: 'Icy, battered, and absolutely locked in on giant storms.',
+    },
+  },
+];
+
 // ── STATE ────────────────────────────────────────────────────
 let cameraX = 0;           // current horizontal scroll offset in pixels
 let targetCameraX = 0;     // smooth scroll target
@@ -322,6 +373,8 @@ let rotations   = {};      // { planetId: angle }
 let moonAngles  = {};      // { moonId: angle }
 let beltParticles = [];    // asteroid belt dots
 let activePlanet = null;   // currently shown in info panel
+let activeProbes = [];
+let displayMode = 'planets';
 let introGone = false;
 let closingShown = false;
 let audioStarted = false;
@@ -337,11 +390,15 @@ const canvas   = document.getElementById('space');
 const ctx      = canvas.getContext('2d');
 const intro    = document.getElementById('intro');
 const infoPanel = document.getElementById('info-panel');
+const infoPanelSecondary = document.getElementById('info-panel-secondary');
 const closingCard = document.getElementById('closing-card');
 const rulerNeedle = document.getElementById('ruler-needle');
 const rulerKm  = document.getElementById('ruler-km');
 const rulerLight = document.getElementById('ruler-light');
+const rulerFocus = document.getElementById('ruler-focus');
 const rulerPlanets = document.getElementById('ruler-planets');
+const modePlanetsBtn = document.getElementById('mode-planets');
+const modeProbesBtn = document.getElementById('mode-probes');
 const muteBtn  = document.getElementById('mute-btn');
 const muteIcon = document.getElementById('mute-icon');
 const audio    = document.getElementById('ambient');
@@ -353,11 +410,31 @@ const infoType    = document.getElementById('info-type');
 const factSize    = document.getElementById('fact-size');
 const factFlight  = document.getElementById('fact-flight');
 const factSmell   = document.getElementById('fact-smell');
+const factIcon1   = document.getElementById('fact-icon-1');
+const factIcon2   = document.getElementById('fact-icon-2');
+const factIcon3   = document.getElementById('fact-icon-3');
+const factLabel1  = document.getElementById('fact-label-1');
+const factLabel2  = document.getElementById('fact-label-2');
+const factLabel3  = document.getElementById('fact-label-3');
+
+const info2Symbol  = document.getElementById('info2-symbol');
+const info2Name    = document.getElementById('info2-name');
+const info2Type    = document.getElementById('info2-type');
+const info2FactSize   = document.getElementById('info2-fact-size');
+const info2FactFlight = document.getElementById('info2-fact-flight');
+const info2FactSmell  = document.getElementById('info2-fact-smell');
+const info2FactIcon1  = document.getElementById('info2-fact-icon-1');
+const info2FactIcon2  = document.getElementById('info2-fact-icon-2');
+const info2FactIcon3  = document.getElementById('info2-fact-icon-3');
+const info2FactLabel1 = document.getElementById('info2-fact-label-1');
+const info2FactLabel2 = document.getElementById('info2-fact-label-2');
+const info2FactLabel3 = document.getElementById('info2-fact-label-3');
 
 // Closing card fields
 const closeOortInner = document.getElementById('close-oort-inner');
 const closeOortOuter = document.getElementById('close-oort-outer');
 const closeProxima   = document.getElementById('close-proxima');
+const closeNewHorizons = document.getElementById('close-new-horizons');
 
 // ── INIT ─────────────────────────────────────────────────────
 function init() {
@@ -387,15 +464,20 @@ function initMoonAngles() {
 
 function buildBelt() {
   beltParticles = [];
-  for (let i = 0; i < 320; i++) {
-    // Slight clustering: bias samples toward the inner belt
-    const t = Math.random();
+  for (let i = 0; i < 900; i++) {
+    // Bias samples toward denser inner clusters so the belt reads as a region.
+    const t = Math.pow(Math.random(), 1.55);
+    const depth = Math.random();
+    const cluster = Math.random();
+    const sizeBase = Math.random();
+    const isChunk = cluster > 0.92;
     const au = BELT_INNER_AU + t * (BELT_OUTER_AU - BELT_INNER_AU);
     beltParticles.push({
       worldX:   au * PIXELS_PER_AU,
-      yFrac:    (Math.random() - 0.5) * 2,   // -1..1, scaled by spread at draw time
-      size:     0.5 + Math.random() * 1.5,
-      opacity:  0.2 + Math.random() * 0.45,
+      yFrac:    (Math.random() - 0.5) * (isChunk ? 1.2 : 1.8),
+      size:     isChunk ? 1.4 + sizeBase * 2.2 : 0.35 + sizeBase * 1.35,
+      opacity:  isChunk ? 0.45 + Math.random() * 0.3 : 0.08 + Math.random() * 0.32,
+      depth,
     });
   }
 }
@@ -434,15 +516,100 @@ function drawStars(dt) {
 }
 
 function drawBelt() {
-  const maxSpread = canvasH * 0.11;
+  const maxSpread = canvasH * 0.12;
+  const centerY = canvasH / 2;
+  const innerX = BELT_INNER_AU * PIXELS_PER_AU - cameraX + canvasW * 0.2;
+  const outerX = BELT_OUTER_AU * PIXELS_PER_AU - cameraX + canvasW * 0.2;
+  const bandLeft = Math.max(-canvasW * 0.2, innerX);
+  const bandRight = Math.min(canvasW * 1.2, outerX);
+  const bandWidth = bandRight - bandLeft;
+
+  if (bandWidth > 0) {
+    const haze = ctx.createLinearGradient(0, centerY - maxSpread, 0, centerY + maxSpread);
+    haze.addColorStop(0, 'rgba(0,0,0,0)');
+    haze.addColorStop(0.2, 'rgba(120,106,84,0.04)');
+    haze.addColorStop(0.5, 'rgba(160,145,115,0.12)');
+    haze.addColorStop(0.8, 'rgba(120,106,84,0.04)');
+    haze.addColorStop(1, 'rgba(0,0,0,0)');
+
+    ctx.fillStyle = haze;
+    ctx.fillRect(bandLeft, centerY - maxSpread, bandWidth, maxSpread * 2);
+
+    const coreGlow = ctx.createLinearGradient(0, centerY - maxSpread * 0.55, 0, centerY + maxSpread * 0.55);
+    coreGlow.addColorStop(0, 'rgba(0,0,0,0)');
+    coreGlow.addColorStop(0.5, 'rgba(177,161,223,0.045)');
+    coreGlow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = coreGlow;
+    ctx.fillRect(bandLeft, centerY - maxSpread * 0.55, bandWidth, maxSpread * 1.1);
+  }
+
   beltParticles.forEach(p => {
     const sx = p.worldX - cameraX + canvasW * 0.2;
-    if (sx < -4 || sx > canvasW + 4) return;
-    const sy = canvasH / 2 + p.yFrac * maxSpread;
+    if (sx < -8 || sx > canvasW + 8) return;
+    const depthScale = 0.55 + (1 - p.depth) * 0.65;
+    const sy = centerY + p.yFrac * maxSpread * depthScale;
+    const r = Math.max(0.35, p.size * (0.8 + (1 - p.depth) * 0.45));
+    const alpha = p.opacity * (0.75 + (1 - p.depth) * 0.35);
+
+    if (r > 1.6) {
+      const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, r * 3.6);
+      glow.addColorStop(0, `rgba(188,170,132,${alpha * 0.32})`);
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.beginPath();
+      ctx.arc(sx, sy, r * 3.6, 0, Math.PI * 2);
+      ctx.fillStyle = glow;
+      ctx.fill();
+    }
+
     ctx.beginPath();
-    ctx.arc(sx, sy, Math.max(0.4, p.size), 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(160,145,115,${p.opacity})`;
+    ctx.arc(sx, sy, r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(176,160,126,${alpha})`;
     ctx.fill();
+  });
+}
+
+function drawProbes() {
+  const labelBaseY = canvasH * 0.22;
+
+  PROBES.forEach((probe, index) => {
+    const sx = getProbeVisualX(probe);
+    if (sx < -120 || sx > canvasW + 120) return;
+
+    const direction = index % 2 === 0 ? -1 : 1;
+    const laneOffset = direction * (16 + Math.floor(index / 2) * 18);
+    const labelY = labelBaseY + laneOffset;
+    const markerY = canvasH * 0.41;
+    const isActive = activeProbes.some(active => active.id === probe.id);
+
+    ctx.save();
+
+    if (isActive) {
+      const glow = ctx.createRadialGradient(sx, markerY, 0, sx, markerY, 18);
+      glow.addColorStop(0, 'rgba(164,198,57,0.22)');
+      glow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.beginPath();
+      ctx.arc(sx, markerY, 18, 0, Math.PI * 2);
+      ctx.fillStyle = glow;
+      ctx.fill();
+    }
+
+    ctx.fillStyle = isActive ? '#CDE57A' : '#A4C639';
+    ctx.fillRect(sx - 1, markerY - 4, 3, isActive ? 9 : 6);
+
+    ctx.strokeStyle = isActive ? 'rgba(164,198,57,0.8)' : 'rgba(164,198,57,0.28)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(sx, markerY - 1);
+    ctx.lineTo(sx + direction * 18, labelY + 4);
+    ctx.stroke();
+
+    ctx.font = isActive ? '700 10px "Space Mono"' : '400 9px "Space Mono"';
+    ctx.textAlign = direction === -1 ? 'right' : 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = isActive ? '#F0E6DA' : 'rgba(240,230,218,0.78)';
+    ctx.fillText(probe.name, sx + direction * 22, labelY);
+
+    ctx.restore();
   });
 }
 
@@ -511,6 +678,138 @@ function planetScreenX(planet) {
 
 function planetScreenY() {
   return canvasH * 0.5;
+}
+
+function probeScreenX(probe) {
+  return probe.distanceAU * PIXELS_PER_AU - cameraX + canvasW * 0.2;
+}
+
+function getProbeVisualX(probe) {
+  const trueX = probeScreenX(probe);
+  if (probe.distanceAU > 0.8) return trueX;
+
+  const sun = PLANETS[0];
+  const sunX = planetScreenX(sun);
+  const sunEdge = sunX + getVisualExtentRadius(sun, sunX);
+  const innerProbes = PROBES
+    .filter(item => item.distanceAU <= 0.8)
+    .sort((a, b) => a.distanceAU - b.distanceAU);
+
+  const minSeparation = 72;
+  const baseX = Math.max(trueX, sunEdge + 28);
+  let visualX = baseX;
+
+  for (const item of innerProbes) {
+    const itemTrueX = probeScreenX(item);
+    visualX = Math.max(visualX, itemTrueX, sunEdge + 28);
+
+    if (item.id === probe.id) {
+      return visualX;
+    }
+
+    visualX += minSeparation;
+  }
+
+  return trueX;
+}
+
+function getInnerProbeTargets(centerX) {
+  const innerProbes = PROBES
+    .filter(probe => probe.distanceAU <= 0.8)
+    .map(probe => ({ probe, x: getProbeVisualX(probe) }))
+    .sort((a, b) => a.x - b.x);
+
+  if (!innerProbes.length) return [];
+
+  const clusterStart = innerProbes[0].x - 48;
+  const clusterEnd = innerProbes[innerProbes.length - 1].x + 48;
+  if (centerX < clusterStart || centerX > clusterEnd) return [];
+
+  return innerProbes
+    .map(item => ({ ...item, dist: Math.abs(item.x - centerX) }))
+    .sort((a, b) => a.dist - b.dist)
+    .slice(0, 2);
+}
+
+function getProbeFocusX() {
+  const sun = PLANETS[0];
+  const sunX = planetScreenX(sun);
+  const sunEdge = sunX + getVisualExtentRadius(sun, sunX);
+  return Math.max(canvasW * 0.34, sunEdge + 120);
+}
+
+function setPanelContent(panelEls, target, mode) {
+  panelEls.symbol.textContent = target.symbol;
+  panelEls.name.textContent = target.name;
+  panelEls.type.textContent = target.type;
+  panelEls.factSize.textContent = target.facts.size;
+  panelEls.factFlight.textContent = target.facts.flight;
+  panelEls.factSmell.textContent = target.facts.smell;
+
+  if (mode === 'probes') {
+    panelEls.icon1.textContent = '🚗';
+    panelEls.icon2.textContent = '🛰️';
+    panelEls.icon3.textContent = '💭';
+    panelEls.label1.textContent = 'SIZE VS HATCHBACK';
+    panelEls.label2.textContent = 'MISSION / LAUNCH DATE';
+    panelEls.label3.textContent = "HOW'S IT FEELING";
+    panelEls.panel.classList.add('probe-panel');
+  } else {
+    panelEls.icon1.textContent = '🌍';
+    panelEls.icon2.textContent = '✈️';
+    panelEls.icon3.textContent = '👃';
+    panelEls.label1.textContent = 'SIZE';
+    panelEls.label2.textContent = 'COMMERCIAL FLIGHT';
+    panelEls.label3.textContent = 'SMELLS LIKE';
+    panelEls.panel.classList.remove('probe-panel');
+  }
+}
+
+function showInfoCards(targets, mode) {
+  const primaryPanel = {
+    panel: infoPanel,
+    symbol: infoSymbol,
+    name: infoName,
+    type: infoType,
+    factSize,
+    factFlight,
+    factSmell,
+    icon1: factIcon1,
+    icon2: factIcon2,
+    icon3: factIcon3,
+    label1: factLabel1,
+    label2: factLabel2,
+    label3: factLabel3,
+  };
+  const secondaryPanel = {
+    panel: infoPanelSecondary,
+    symbol: info2Symbol,
+    name: info2Name,
+    type: info2Type,
+    factSize: info2FactSize,
+    factFlight: info2FactFlight,
+    factSmell: info2FactSmell,
+    icon1: info2FactIcon1,
+    icon2: info2FactIcon2,
+    icon3: info2FactIcon3,
+    label1: info2FactLabel1,
+    label2: info2FactLabel2,
+    label3: info2FactLabel3,
+  };
+
+  if (targets[0]) {
+    setPanelContent(primaryPanel, targets[0], mode);
+    infoPanel.classList.add('visible');
+  } else {
+    infoPanel.classList.remove('visible');
+  }
+
+  if (targets[1]) {
+    setPanelContent(secondaryPanel, targets[1], mode);
+    infoPanelSecondary.classList.add('visible');
+  } else {
+    infoPanelSecondary.classList.remove('visible');
+  }
 }
 
 function getPlanetActualRadiusKm(planet) {
@@ -886,6 +1185,41 @@ function drawPlanetLabel(planet, r) {
 let infoPanelCooldown = 0;
 
 function checkInfoPanel() {
+  if (displayMode === 'probes') {
+    const focusX = getProbeFocusX();
+    const threshold = Math.max(120, canvasW * 0.12);
+    const innerTargets = getInnerProbeTargets(focusX);
+    const inRange = innerTargets.length
+      ? innerTargets
+      : PROBES
+          .map(probe => {
+            const visualX = getProbeVisualX(probe);
+            return { probe, dist: Math.abs(visualX - focusX), x: visualX };
+          })
+          .filter(item => item.dist < threshold)
+          .sort((a, b) => a.dist - b.dist)
+          .slice(0, 2);
+
+    if (inRange.length) {
+      const orderedTargets = inRange
+        .sort((a, b) => a.x - b.x)
+        .map(item => item.probe);
+
+      const changed = orderedTargets.length !== activeProbes.length
+        || orderedTargets.some((probe, index) => activeProbes[index]?.id !== probe.id);
+
+      if (changed) {
+        activeProbes = orderedTargets;
+        showInfoCards(orderedTargets, 'probes');
+      }
+    } else {
+      activeProbes = [];
+      hideInfoPanel();
+    }
+    activePlanet = null;
+    return;
+  }
+
   const cx = canvasW * 0.5;
   let nearest = null;
   let nearestDist = Infinity;
@@ -914,17 +1248,12 @@ function checkInfoPanel() {
 }
 
 function showInfoPanel(planet) {
-  infoSymbol.textContent  = planet.symbol;
-  infoName.textContent    = planet.name;
-  infoType.textContent    = planet.type;
-  factSize.textContent    = planet.facts.size;
-  factFlight.textContent  = planet.facts.flight;
-  factSmell.textContent   = planet.facts.smell;
-  infoPanel.classList.add('visible');
+  showInfoCards([planet], 'planets');
 }
 
 function hideInfoPanel() {
   infoPanel.classList.remove('visible');
+  infoPanelSecondary.classList.remove('visible');
 }
 
 // ── RULER HUD ────────────────────────────────────────────────
@@ -933,11 +1262,23 @@ function buildRulerNotches() {
   [...PLANETS, ASTEROID_BELT].forEach(p => {
     const pct = p.distanceAU / TOTAL_AU;
     const notch = document.createElement('div');
-    notch.className = 'ruler-notch';
+    notch.className = 'ruler-notch planet-notch';
+    notch.dataset.planetId = p.id;
     notch.style.left = `${pct * 100}%`;
     notch.innerHTML = `
-      <div class="ruler-notch-tick"></div>
-      <div class="ruler-notch-label">${p.id.toUpperCase()}</div>
+      <div class="ruler-notch-tick" aria-hidden="true"></div>
+    `;
+    rulerPlanets.appendChild(notch);
+  });
+
+  PROBES.forEach(probe => {
+    const pct = probe.distanceAU / TOTAL_AU;
+    const notch = document.createElement('div');
+    notch.className = 'ruler-notch probe-notch';
+    notch.dataset.probeId = probe.id;
+    notch.style.left = `${pct * 100}%`;
+    notch.innerHTML = `
+      <div class="ruler-notch-tick" aria-hidden="true"></div>
     `;
     rulerPlanets.appendChild(notch);
   });
@@ -954,6 +1295,21 @@ function updateRuler() {
   rulerLight.textContent = currentLM < 1
     ? `${(currentLM * 60).toFixed(1)} light-seconds`
     : `${currentLM.toFixed(2)} light-minutes`;
+
+  const focusTarget = displayMode === 'probes' ? activeProbes[0] : activePlanet;
+  rulerFocus.textContent = focusTarget ? focusTarget.name : 'DEEP SPACE';
+
+  rulerPlanets.querySelectorAll('.planet-notch').forEach(notch => {
+    const isActivePlanet = activePlanet && notch.dataset.planetId === activePlanet.id;
+    notch.classList.toggle('active', displayMode === 'planets' && isActivePlanet);
+    notch.classList.toggle('dimmed', displayMode === 'probes');
+  });
+
+  rulerPlanets.querySelectorAll('.probe-notch').forEach(notch => {
+    const isActiveProbe = activeProbes.some(probe => notch.dataset.probeId === probe.id);
+    notch.classList.toggle('active', displayMode === 'probes' && isActiveProbe);
+    notch.classList.toggle('visible', displayMode === 'probes');
+  });
 
   // Needle position
   const needlePct = Math.min(1, scrollFraction) * 100;
@@ -980,10 +1336,12 @@ function populateClosingCard() {
   const oortInner  = 2_000;     // AU
   const oortOuter  = 100_000;   // AU
   const proxima    = 268_332;   // AU (4.24 ly)
+  const newHorizons = 65.5;
 
   closeOortInner.textContent = `~${scrollMultiple(oortInner).toLocaleString()}× this entire scroll`;
   closeOortOuter.textContent = `~${scrollMultiple(oortOuter).toLocaleString()}× this entire scroll`;
   closeProxima.textContent   = `~${scrollMultiple(proxima).toLocaleString()}× this entire scroll`;
+  closeNewHorizons.textContent = `~${(newHorizons / journeyAU).toFixed(1)}× farther than Pluto`;
 }
 
 function checkClosingCard() {
@@ -1011,6 +1369,11 @@ let lastTouchX     = 0;
 let touchVelocity  = 0;    // px/frame momentum
 let lastTouchTime  = 0;
 let momentumRaf    = null;
+let isMouseDragging = false;
+let lastMouseX = 0;
+let lastMouseY = 0;
+let mouseVelocity = 0;
+let lastMouseTime = 0;
 
 function onWheel(e) {
   dismissIntro();
@@ -1057,6 +1420,43 @@ function onTouchEnd() {
   applyMomentum(initialVelocity);
 }
 
+function onMouseDown(e) {
+  if (e.button !== 0) return;
+  dismissIntro();
+  isMouseDragging = true;
+  lastMouseX = e.clientX;
+  lastMouseY = e.clientY;
+  lastMouseTime = Date.now();
+  mouseVelocity = 0;
+  clearTimeout(scrollIdleTimer);
+  isSnapping = false;
+  if (momentumRaf) { cancelAnimationFrame(momentumRaf); momentumRaf = null; }
+  document.body.classList.add('dragging');
+}
+
+function onMouseMove(e) {
+  if (!isMouseDragging) return;
+  const now = Date.now();
+  const dx = e.clientX - lastMouseX;
+  const dy = e.clientY - lastMouseY;
+  const dt = Math.max(1, now - lastMouseTime);
+  const delta = dy - dx;
+  mouseVelocity = delta / dt;
+  lastMouseX = e.clientX;
+  lastMouseY = e.clientY;
+  lastMouseTime = now;
+  targetCameraX += delta * TOUCH_SENSITIVITY;
+  clampTarget();
+}
+
+function endMouseDrag() {
+  if (!isMouseDragging) return;
+  isMouseDragging = false;
+  document.body.classList.remove('dragging');
+  const initialVelocity = mouseVelocity * TOUCH_SENSITIVITY * 16;
+  applyMomentum(initialVelocity);
+}
+
 function applyMomentum(velocity) {
   if (Math.abs(velocity) < 0.5) {
     // Velocity exhausted — now snap
@@ -1074,7 +1474,6 @@ function clampTarget() {
   targetCameraX = Math.max(0, Math.min(targetCameraX, maxScroll));
 }
 
-// Snap camera so a planet sits exactly at screen center
 function snapToNearestPlanet() {
   const cx = canvasW * 0.5;
   let nearest = null;
@@ -1102,11 +1501,38 @@ function snapToNearestPlanet() {
   }
 }
 
+function snapToNearestProbe() {
+  const focusX = getProbeFocusX();
+  let nearest = null;
+  let nearestDist = Infinity;
+
+  PROBES.forEach(probe => {
+    const sx = getProbeVisualX(probe);
+    const dist = Math.abs(sx - focusX);
+    if (dist < nearestDist) {
+      nearestDist = dist;
+      nearest = probe;
+    }
+  });
+
+  if (!nearest || nearestDist >= Math.max(120, canvasW * 0.12)) return;
+
+  const targetVisualX = getProbeVisualX(nearest);
+  const delta = targetVisualX - focusX;
+  targetCameraX += delta;
+  clampTarget();
+  isSnapping = false;
+  snappingTo = null;
+}
+
 function scheduleSnap() {
   clearTimeout(scrollIdleTimer);
   isSnapping = false;
   snappingTo = null;
-  scrollIdleTimer = setTimeout(snapToNearestPlanet, 350);
+  scrollIdleTimer = setTimeout(
+    displayMode === 'probes' ? snapToNearestProbe : snapToNearestPlanet,
+    350
+  );
 }
 
 function dismissIntro() {
@@ -1141,6 +1567,20 @@ muteBtn.addEventListener('click', () => {
   if (!audioStarted) tryStartAudio();
 });
 
+function setDisplayMode(mode) {
+  displayMode = mode;
+  activePlanet = null;
+  activeProbes = [];
+  hideInfoPanel();
+  modePlanetsBtn.classList.toggle('active', mode === 'planets');
+  modePlanetsBtn.setAttribute('aria-pressed', String(mode === 'planets'));
+  modeProbesBtn.classList.toggle('active', mode === 'probes');
+  modeProbesBtn.setAttribute('aria-pressed', String(mode === 'probes'));
+}
+
+modePlanetsBtn.addEventListener('click', () => setDisplayMode('planets'));
+modeProbesBtn.addEventListener('click', () => setDisplayMode('probes'));
+
 // ── MAIN LOOP ────────────────────────────────────────────────
 function loop(ts) {
   const dt = Math.min(ts - lastFrameTime, 50);  // cap at 50ms
@@ -1169,9 +1609,13 @@ function loop(ts) {
   // Draw moons (on top of planets so they're visible against planet bodies)
   drawMoons(dt);
 
+  if (displayMode === 'probes') {
+    drawProbes();
+  }
+
   // Update HUD
-  updateRuler();
   checkInfoPanel();
+  updateRuler();
   checkClosingCard();
 
   requestAnimationFrame(loop);
@@ -1185,6 +1629,10 @@ window.addEventListener('resize', () => {
 });
 
 window.addEventListener('wheel', onWheel, { passive: false });
+window.addEventListener('mousedown', onMouseDown);
+window.addEventListener('mousemove', onMouseMove);
+window.addEventListener('mouseup', endMouseDrag);
+window.addEventListener('mouseleave', endMouseDrag);
 window.addEventListener('touchstart', onTouchStart, { passive: true });
 window.addEventListener('touchmove', onTouchMove, { passive: false });
 window.addEventListener('touchend',  onTouchEnd,  { passive: true });

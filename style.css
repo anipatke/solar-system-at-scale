@@ -10,6 +10,9 @@
   --accent:       #B1A1DF;   /* Vibe Purple */
   --accent-glow:  rgba(177, 161, 223, 0.15);
   --accent-dim:   rgba(177, 161, 223, 0.4);
+  --probe:        #A4C639;
+  --probe-glow:   rgba(164, 198, 57, 0.18);
+  --probe-dim:    rgba(164, 198, 57, 0.45);
 
   --font-head:    'Chakra Petch', sans-serif;
   --font-body:    'Space Mono', monospace;
@@ -36,6 +39,11 @@ html, body {
   top: 0; left: 0;
   width: 100%; height: 100%;
   display: block;
+  cursor: grab;
+}
+
+body.dragging #space {
+  cursor: grabbing;
 }
 
 /* ===== SCANLINE OVERLAY ===== */
@@ -57,14 +65,14 @@ html, body {
 #ruler {
   position: fixed;
   top: 0; left: 0; right: 0;
-  height: 48px;
+  height: 62px;
   z-index: 50;
   background: linear-gradient(to bottom, rgba(13,13,13,0.95), rgba(13,13,13,0.7));
   border-bottom: 1px solid var(--border-sub);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 0 16px 4px;
+  padding: 6px 16px 6px;
 }
 
 #ruler-track {
@@ -103,30 +111,83 @@ html, body {
 /* planet notch on ruler — injected by JS */
 .ruler-notch {
   position: absolute;
-  top: 0;
+  top: 50%;
   transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
 }
 .ruler-notch-tick {
   width: 1px;
   height: 8px;
   background: var(--text-dim);
+  transform: translateY(-50%);
+  transition: height 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
 }
-.ruler-notch-label {
-  font-family: var(--font-pixel);
-  font-size: 5px;
-  color: var(--text-dim);
-  white-space: nowrap;
-  letter-spacing: 0.5px;
+.ruler-notch.active .ruler-notch-tick {
+  height: 12px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+.ruler-notch.dimmed {
+  opacity: 0.22;
+}
+.probe-notch {
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.probe-notch.visible {
+  opacity: 1;
+}
+.probe-notch .ruler-notch-tick {
+  background: rgba(164, 198, 57, 0.45);
+}
+.probe-notch.active .ruler-notch-tick {
+  background: var(--probe);
+  box-shadow: 0 0 8px var(--probe-glow);
 }
 
 #ruler-readout {
   display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
   gap: 16px;
+}
+
+#ruler-distance {
+  display: flex;
   align-items: baseline;
+  gap: 12px;
+}
+
+#ruler-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--border-sub);
+  background: rgba(15, 15, 15, 0.92);
+}
+
+.ruler-mode-btn {
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-body);
+  font-size: 8px;
+  letter-spacing: 1px;
+  padding: 5px 8px 4px;
+  cursor: pointer;
+  transition: color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.ruler-mode-btn.active {
+  color: var(--probe);
+  background: rgba(164, 198, 57, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(164, 198, 57, 0.18);
+}
+
+.ruler-mode-btn#mode-planets.active {
+  color: var(--accent);
+  background: rgba(177, 161, 223, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(177, 161, 223, 0.16);
 }
 
 #ruler-km {
@@ -141,6 +202,30 @@ html, body {
   font-size: 8px;
   color: var(--text-dim);
   letter-spacing: 0.5px;
+}
+
+#ruler-focus-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 140px;
+}
+
+#ruler-focus-label {
+  font-family: var(--font-body);
+  font-size: 8px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+}
+
+#ruler-focus {
+  font-family: var(--font-head);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
 }
 
 /* ===== MUTE BUTTON ===== */
@@ -233,7 +318,7 @@ html, body {
 }
 
 /* ===== INFO PANEL ===== */
-#info-panel {
+.info-panel {
   position: fixed;
   bottom: 24px;
   left: 24px;
@@ -247,17 +332,22 @@ html, body {
   transition: opacity 0.4s ease, transform 0.4s ease;
   pointer-events: none;
 }
-#info-panel.visible {
+.info-panel.visible {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
 }
 
-#info-inner {
+.info-panel-right {
+  left: auto;
+  right: 24px;
+}
+
+.info-inner {
   padding: 16px 18px 18px;
 }
 
-#info-header {
+.info-header {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -266,12 +356,12 @@ html, body {
   border-bottom: 1px solid var(--border);
 }
 
-#info-symbol {
+.info-symbol {
   font-size: 28px;
   line-height: 1;
 }
 
-#info-name {
+.info-name {
   font-family: var(--font-head);
   font-size: 20px;
   font-weight: 700;
@@ -280,7 +370,7 @@ html, body {
   color: var(--text);
 }
 
-#info-type {
+.info-type {
   font-family: var(--font-pixel);
   font-size: 7px;
   color: var(--accent);
@@ -288,7 +378,19 @@ html, body {
   margin-top: 3px;
 }
 
-#info-facts {
+.info-panel.probe-panel {
+  box-shadow: 0 0 24px var(--probe-glow), inset 0 0 0 1px rgba(164,198,57,0.08);
+}
+
+.info-panel.probe-panel .info-type {
+  color: var(--probe);
+}
+
+.info-panel.probe-panel .fact-label {
+  color: var(--probe-dim);
+}
+
+.info-facts {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -429,11 +531,40 @@ html, body {
 
 /* ===== MOBILE ===== */
 @media (max-width: 600px) {
-  #info-panel {
+  #ruler {
+    height: 72px;
+    padding-inline: 12px;
+  }
+  #ruler-readout {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+  #ruler-mode-toggle {
+    order: 3;
+  }
+  #ruler-distance {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  #ruler-focus-card {
+    align-items: flex-start;
+    min-width: 0;
+  }
+  #ruler-focus {
+    font-size: 11px;
+    letter-spacing: 1.2px;
+  }
+  .info-panel {
     bottom: 12px;
     left: 12px;
     right: 12px;
     width: auto;
+  }
+  .info-panel-right {
+    left: 12px;
+    right: 12px;
+    bottom: 164px;
   }
   #ruler-km { font-size: 6px; }
   #ruler-light { font-size: 7px; }

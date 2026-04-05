@@ -22,8 +22,18 @@
       <div id="ruler-planets"></div>
     </div>
     <div id="ruler-readout">
-      <span id="ruler-km">0 km</span>
-      <span id="ruler-light">0 light-minutes</span>
+      <div id="ruler-distance">
+        <span id="ruler-km">0 km</span>
+        <span id="ruler-light">0 light-minutes</span>
+      </div>
+      <div id="ruler-mode-toggle" role="tablist" aria-label="Display mode">
+        <button class="ruler-mode-btn active" id="mode-planets" type="button" aria-pressed="true">PLANETS</button>
+        <button class="ruler-mode-btn" id="mode-probes" type="button" aria-pressed="false">PROBES</button>
+      </div>
+      <div id="ruler-focus-card">
+        <span id="ruler-focus-label">TRACKING</span>
+        <span id="ruler-focus">DEEP SPACE</span>
+      </div>
     </div>
   </div>
 
@@ -46,35 +56,70 @@
   <canvas id="space"></canvas>
 
   <!-- Info panel -->
-  <div id="info-panel">
-    <div id="info-inner">
-      <div id="info-header">
-        <span id="info-symbol"></span>
+  <div id="info-panel" class="info-panel">
+    <div class="info-inner">
+      <div class="info-header">
+        <span id="info-symbol" class="info-symbol"></span>
         <div>
-          <h2 id="info-name"></h2>
-          <p id="info-type"></p>
+          <h2 id="info-name" class="info-name"></h2>
+          <p id="info-type" class="info-type"></p>
         </div>
       </div>
-      <div id="info-facts">
+      <div class="info-facts">
         <div class="fact">
-          <span class="fact-icon">🌍</span>
+          <span class="fact-icon" id="fact-icon-1">🌍</span>
           <div>
-            <span class="fact-label">SIZE</span>
+            <span class="fact-label" id="fact-label-1">SIZE</span>
             <span class="fact-value" id="fact-size"></span>
           </div>
         </div>
         <div class="fact">
-          <span class="fact-icon">✈️</span>
+          <span class="fact-icon" id="fact-icon-2">✈️</span>
           <div>
-            <span class="fact-label">COMMERCIAL FLIGHT</span>
+            <span class="fact-label" id="fact-label-2">COMMERCIAL FLIGHT</span>
             <span class="fact-value" id="fact-flight"></span>
           </div>
         </div>
         <div class="fact">
-          <span class="fact-icon">👃</span>
+          <span class="fact-icon" id="fact-icon-3">👃</span>
           <div>
-            <span class="fact-label">SMELLS LIKE</span>
+            <span class="fact-label" id="fact-label-3">SMELLS LIKE</span>
             <span class="fact-value" id="fact-smell"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="info-panel-secondary" class="info-panel info-panel-right">
+    <div class="info-inner">
+      <div class="info-header">
+        <span id="info2-symbol" class="info-symbol"></span>
+        <div>
+          <h2 id="info2-name" class="info-name"></h2>
+          <p id="info2-type" class="info-type"></p>
+        </div>
+      </div>
+      <div class="info-facts">
+        <div class="fact">
+          <span class="fact-icon" id="info2-fact-icon-1">🚗</span>
+          <div>
+            <span class="fact-label" id="info2-fact-label-1">SIZE</span>
+            <span class="fact-value" id="info2-fact-size"></span>
+          </div>
+        </div>
+        <div class="fact">
+          <span class="fact-icon" id="info2-fact-icon-2">🛰️</span>
+          <div>
+            <span class="fact-label" id="info2-fact-label-2">MISSION / LAUNCH DATE</span>
+            <span class="fact-value" id="info2-fact-flight"></span>
+          </div>
+        </div>
+        <div class="fact">
+          <span class="fact-icon" id="info2-fact-icon-3">💭</span>
+          <div>
+            <span class="fact-label" id="info2-fact-label-3">HOW'S IT FEELING</span>
+            <span class="fact-value" id="info2-fact-smell"></span>
           </div>
         </div>
       </div>
@@ -97,6 +142,10 @@
       <div class="closing-stat">
         <span class="closing-label">PROXIMA CENTAURI</span>
         <span class="closing-val" id="close-proxima"></span>
+      </div>
+      <div class="closing-stat">
+        <span class="closing-label">NEW HORIZONS</span>
+        <span class="closing-val" id="close-new-horizons"></span>
       </div>
       <p class="closing-kicker">The universe does not care about your scroll wheel.</p>
       <a class="closing-back" href="https://anipatke.com" target="_parent">← BACK TO VIBE LAB</a>
