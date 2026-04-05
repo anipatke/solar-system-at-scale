@@ -379,6 +379,7 @@ let beltParticles = [];    // asteroid belt dots
 let activePlanet = null;   // currently shown in info panel
 let activeProbes = [];
 let displayMode = 'planets';
+let isScaleLabCollapsed = false;
 let introGone = false;
 let closingShown = false;
 let audioStarted = false;
@@ -403,7 +404,11 @@ const rulerFocus = document.getElementById('ruler-focus');
 const rulerPlanets = document.getElementById('ruler-planets');
 const modePlanetsBtn = document.getElementById('mode-planets');
 const modeProbesBtn = document.getElementById('mode-probes');
+const scaleLab = document.getElementById('scale-lab');
 const scaleLabTitle = document.getElementById('scale-lab-title');
+const scaleLabBody = document.getElementById('scale-lab-body');
+const scaleLabToggle = document.getElementById('scale-lab-toggle');
+const scaleLabToggleLabel = document.getElementById('scale-lab-toggle-label');
 const scaleLabFocusName = document.getElementById('scale-lab-focus-name');
 const scaleLabFocusMeta = document.getElementById('scale-lab-focus-meta');
 const scaleViewSplit = document.getElementById('scale-view-split');
@@ -462,6 +467,7 @@ function init() {
   initRotations();
   initMoonAngles();
   buildBelt();
+  syncScaleLabCollapse();
   populateClosingCard();
   requestAnimationFrame(loop);
 }
@@ -1384,6 +1390,20 @@ function setMeterFill(el, value, max) {
   el.style.width = `${pct * 100}%`;
 }
 
+function syncScaleLabCollapse() {
+  const mobile = window.innerWidth <= 600;
+  if (!mobile) {
+    isScaleLabCollapsed = false;
+  } else if (!scaleLab.dataset.mobileInitialized) {
+    isScaleLabCollapsed = true;
+    scaleLab.dataset.mobileInitialized = 'true';
+  }
+
+  scaleLab.classList.toggle('collapsed', isScaleLabCollapsed);
+  scaleLabToggle.setAttribute('aria-expanded', String(!isScaleLabCollapsed));
+  scaleLabToggleLabel.textContent = isScaleLabCollapsed ? 'SHOW' : 'HIDE';
+}
+
 function getScaleFocusTarget() {
   if (displayMode === 'probes') {
     if (activeProbes[0]) return activeProbes[0];
@@ -1739,6 +1759,13 @@ function setDisplayMode(mode) {
 
 modePlanetsBtn.addEventListener('click', () => setDisplayMode('planets'));
 modeProbesBtn.addEventListener('click', () => setDisplayMode('probes'));
+scaleLabToggle.addEventListener('click', () => {
+  isScaleLabCollapsed = !isScaleLabCollapsed;
+  if (window.innerWidth <= 600) {
+    scaleLab.dataset.mobileInitialized = 'true';
+  }
+  syncScaleLabCollapse();
+});
 
 // ── MAIN LOOP ────────────────────────────────────────────────
 function loop(ts) {
@@ -1786,6 +1813,7 @@ window.addEventListener('resize', () => {
   resize();
   buildStars();
   buildRulerNotches();
+  syncScaleLabCollapse();
 });
 
 window.addEventListener('wheel', onWheel, { passive: false });

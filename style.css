@@ -199,6 +199,23 @@ body.dragging #space {
   gap: 12px;
 }
 
+#scale-lab-toggle {
+  display: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-dim);
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  letter-spacing: 1px;
+  padding: 7px 8px 6px;
+  cursor: pointer;
+}
+
+#scale-lab-toggle:hover {
+  color: var(--text);
+  border-color: rgba(177, 161, 223, 0.22);
+}
+
 .scale-lab-kicker {
   font-family: var(--font-pixel);
   font-size: 7px;
@@ -809,6 +826,16 @@ body.dragging #space {
   #scale-lab {
     top: 136px;
     padding: 12px;
+  }
+  #scale-lab-toggle {
+    display: inline-flex;
+    align-self: flex-start;
+  }
+  #scale-lab.collapsed {
+    padding-bottom: 10px;
+  }
+  #scale-lab.collapsed #scale-lab-body {
+    display: none;
   }
   #scale-lab-title {
     font-size: 16px;
