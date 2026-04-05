@@ -65,14 +65,14 @@ body.dragging #space {
 #ruler {
   position: fixed;
   top: 0; left: 0; right: 0;
-  height: 62px;
+  height: 88px;
   z-index: 50;
   background: linear-gradient(to bottom, rgba(13,13,13,0.95), rgba(13,13,13,0.7));
   border-bottom: 1px solid var(--border-sub);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 6px 16px 6px;
+  padding: 6px 16px 8px;
 }
 
 #ruler-track {
@@ -151,6 +151,230 @@ body.dragging #space {
   gap: 16px;
 }
 
+#scale-note {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.scale-note-label {
+  flex: 0 0 auto;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--accent-dim);
+}
+
+.scale-note-copy {
+  font-family: var(--font-body);
+  font-size: 8px;
+  line-height: 1.35;
+  letter-spacing: 0.3px;
+  color: var(--text-dim);
+  max-width: 860px;
+}
+
+#scale-lab {
+  position: fixed;
+  top: 108px;
+  right: 16px;
+  width: min(420px, calc(100vw - 32px));
+  z-index: 45;
+  padding: 14px 14px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(15, 15, 15, 0.96), rgba(15, 15, 15, 0.82)),
+    radial-gradient(circle at top left, rgba(177, 161, 223, 0.08), transparent 42%);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+}
+
+#scale-lab-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.scale-lab-kicker {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--accent-dim);
+  margin-bottom: 6px;
+}
+
+#scale-lab-title {
+  font-family: var(--font-head);
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: 0.8px;
+}
+
+#scale-lab-focus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.scale-lab-label {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--accent-dim);
+}
+
+#scale-lab-focus-name {
+  font-family: var(--font-head);
+  font-size: 14px;
+  letter-spacing: 1.1px;
+}
+
+#scale-lab-focus-meta {
+  color: var(--text-dim);
+  font-size: 8px;
+  letter-spacing: 0.3px;
+}
+
+.scale-view {
+  margin-top: 12px;
+}
+
+.scale-view-copy,
+#scale-split-summary {
+  color: var(--text-dim);
+  font-size: 8px;
+  line-height: 1.45;
+  letter-spacing: 0.28px;
+}
+
+.scale-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.scale-stat,
+.scale-compare-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.scale-stat-label {
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+.scale-stat-value {
+  font-family: var(--font-head);
+  font-size: 12px;
+  letter-spacing: 0.45px;
+}
+
+#scale-split-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.scale-compare-card {
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.scale-compare-card.readable {
+  box-shadow: inset 0 0 0 1px rgba(177, 161, 223, 0.08);
+}
+
+.scale-compare-card.true {
+  box-shadow: inset 0 0 0 1px rgba(164, 198, 57, 0.08);
+}
+
+.scale-compare-kicker {
+  display: block;
+  margin-bottom: 10px;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+.scale-meter {
+  height: 5px;
+  margin: 8px 0 12px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.scale-meter-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, rgba(177, 161, 223, 0.35), var(--accent));
+}
+
+.scale-compare-card.true .scale-meter-fill {
+  background: linear-gradient(90deg, rgba(164, 198, 57, 0.35), var(--probe));
+}
+
+#scale-split-summary {
+  margin-top: 10px;
+}
+
+#scale-map-track {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.scale-map-segment {
+  min-height: 86px;
+  padding: 10px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(177, 161, 223, 0.07), rgba(177, 161, 223, 0.01)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.scale-map-segment-label {
+  display: block;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--accent-dim);
+}
+
+.scale-map-segment-span {
+  display: block;
+  margin-top: 14px;
+  font-size: 8px;
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+#scale-map-marker {
+  position: absolute;
+  top: -6px;
+  width: 2px;
+  height: 98px;
+  background: var(--probe);
+  box-shadow: 0 0 10px var(--probe-glow);
+  transform: translateX(-1px);
+}
+
 #ruler-distance {
   display: flex;
   align-items: baseline;
@@ -217,6 +441,39 @@ body.dragging #space {
   font-size: 8px;
   color: var(--text-dim);
   letter-spacing: 1px;
+}
+
+@media (max-width: 900px) {
+  #ruler {
+    height: 110px;
+  }
+
+  #ruler-readout {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  #scale-note {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .scale-note-copy {
+    max-width: none;
+  }
+
+  #scale-lab {
+    top: 130px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+
+  #scale-split-grid,
+  .scale-stats-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 #ruler-focus {
@@ -532,13 +789,29 @@ body.dragging #space {
 /* ===== MOBILE ===== */
 @media (max-width: 600px) {
   #ruler {
-    height: 72px;
+    height: 118px;
     padding-inline: 12px;
   }
   #ruler-readout {
     align-items: flex-start;
     flex-direction: column;
     gap: 6px;
+  }
+  #scale-note {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .scale-note-copy {
+    max-width: none;
+    font-size: 7px;
+  }
+  #scale-lab {
+    top: 136px;
+    padding: 12px;
+  }
+  #scale-lab-title {
+    font-size: 16px;
   }
   #ruler-mode-toggle {
     order: 3;

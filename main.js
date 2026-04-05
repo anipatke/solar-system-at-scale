@@ -263,6 +263,7 @@ const PLANETS = [
 
 // Total scroll distance in AU (Pluto + some breathing room)
 const TOTAL_AU = PLANETS[PLANETS.length - 1].distanceAU + 4;
+const TRUE_SCALE_BASELINE_BODY_ID = 'pluto';
 
 // ── MOON DATA ────────────────────────────────────────────────
 // orbitalKm: distance from planet center (km)
@@ -270,6 +271,9 @@ const TOTAL_AU = PLANETS[PLANETS.length - 1].distanceAU + 4;
 // Moon systems are rendered as proportional multiples of the parent's radius.
 // Tiny moons still get a minimum visible size.
 const SUN_ACTUAL_R_KM = 695_700;
+const TRUE_SCALE_BASELINE_RADIUS_KM = SIZE_RATIO_TO_SUN[TRUE_SCALE_BASELINE_BODY_ID] * SUN_ACTUAL_R_KM;
+const TRUE_SCALE_PX_PER_KM = TRUE_SIZE_MIN_RADIUS / TRUE_SCALE_BASELINE_RADIUS_KM;
+const TRUE_SCALE_PX_PER_AU = AU_KM * TRUE_SCALE_PX_PER_KM;
 
 const MOONS = [
   // Earth
@@ -399,6 +403,20 @@ const rulerFocus = document.getElementById('ruler-focus');
 const rulerPlanets = document.getElementById('ruler-planets');
 const modePlanetsBtn = document.getElementById('mode-planets');
 const modeProbesBtn = document.getElementById('mode-probes');
+const scaleLabTitle = document.getElementById('scale-lab-title');
+const scaleLabFocusName = document.getElementById('scale-lab-focus-name');
+const scaleLabFocusMeta = document.getElementById('scale-lab-focus-meta');
+const scaleViewSplit = document.getElementById('scale-view-split');
+const scaleSplitCopy = document.getElementById('scale-split-copy');
+const scaleSplitReadableSize = document.getElementById('scale-split-readable-size');
+const scaleSplitReadableSizeFill = document.getElementById('scale-split-readable-size-fill');
+const scaleSplitReadableDistance = document.getElementById('scale-split-readable-distance');
+const scaleSplitReadableDistanceFill = document.getElementById('scale-split-readable-distance-fill');
+const scaleSplitTrueSize = document.getElementById('scale-split-true-size');
+const scaleSplitTrueSizeFill = document.getElementById('scale-split-true-size-fill');
+const scaleSplitTrueDistance = document.getElementById('scale-split-true-distance');
+const scaleSplitTrueDistanceFill = document.getElementById('scale-split-true-distance-fill');
+const scaleSplitSummary = document.getElementById('scale-split-summary');
 const muteBtn  = document.getElementById('mute-btn');
 const muteIcon = document.getElementById('mute-icon');
 const audio    = document.getElementById('ambient');
@@ -1341,6 +1359,133 @@ function formatKm(km) {
   return `${(km / 1_000_000_000).toFixed(2)}B km`;
 }
 
+function formatPixels(px) {
+  if (px == null || !Number.isFinite(px)) return 'N/A';
+  if (px < 10) return `${px.toFixed(2)} px`;
+  if (px < 1000) return `${px.toFixed(1)} px`;
+  return `${Math.round(px).toLocaleString()} px`;
+}
+
+function formatAu(au) {
+  if (au < 1) return `${au.toFixed(2)} AU`;
+  if (au < 100) return `${au.toFixed(1)} AU`;
+  return `${Math.round(au).toLocaleString()} AU`;
+}
+
+function formatScreens(px) {
+  const screens = px / Math.max(1, canvasW);
+  if (screens < 10) return `${screens.toFixed(1)} screens`;
+  if (screens < 1000) return `${Math.round(screens).toLocaleString()} screens`;
+  return `${Math.round(screens).toLocaleString()} screens`;
+}
+
+function setMeterFill(el, value, max) {
+  const pct = max > 0 ? Math.max(0, Math.min(value / max, 1)) : 0;
+  el.style.width = `${pct * 100}%`;
+}
+
+function getScaleFocusTarget() {
+  if (displayMode === 'probes') {
+    if (activeProbes[0]) return activeProbes[0];
+
+    const focusX = getProbeFocusX();
+    let nearest = PROBES[0] || null;
+    let nearestDist = Infinity;
+    PROBES.forEach(probe => {
+      const dist = Math.abs(getProbeVisualX(probe) - focusX);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearest = probe;
+      }
+    });
+    return nearest;
+  }
+
+  if (activePlanet) return activePlanet;
+
+  const cx = canvasW * 0.5;
+  let nearest = PLANETS[0];
+  let nearestDist = Infinity;
+  [...PLANETS, ASTEROID_BELT].forEach(target => {
+    const dist = Math.abs(planetScreenX(target) - cx);
+    if (dist < nearestDist) {
+      nearestDist = dist;
+      nearest = target;
+    }
+  });
+  return nearest;
+}
+
+function getTargetActualRadiusKm(target) {
+  if (!target || SIZE_RATIO_TO_SUN[target.id] == null) return null;
+  return SIZE_RATIO_TO_SUN[target.id] * SUN_ACTUAL_R_KM;
+}
+
+function getReadableDiameterPx(target) {
+  if (!target || SIZE_RATIO_TO_SUN[target.id] == null) return null;
+  return getDisplayRadius(target) * 2;
+}
+
+function getTrueDiameterPx(target) {
+  const radiusKm = getTargetActualRadiusKm(target);
+  return radiusKm == null ? null : radiusKm * TRUE_SCALE_PX_PER_KM * 2;
+}
+
+function getReadableDistancePx(target) {
+  return target?.distanceAU == null ? null : target.distanceAU * PIXELS_PER_AU;
+}
+
+function getTrueDistancePx(target) {
+  return target?.distanceAU == null ? null : target.distanceAU * TRUE_SCALE_PX_PER_AU;
+}
+
+function updateScaleLab() {
+  const target = getScaleFocusTarget();
+  if (!target) return;
+
+  const readableDistancePx = getReadableDistancePx(target);
+  const trueDistancePx = getTrueDistancePx(target);
+  const readableDiameterPx = getReadableDiameterPx(target);
+  const trueDiameterPx = getTrueDiameterPx(target);
+  const sizeFactor = readableDiameterPx && trueDiameterPx
+    ? readableDiameterPx / trueDiameterPx
+    : null;
+  const distanceFactor = TRUE_SCALE_PX_PER_AU / PIXELS_PER_AU;
+
+  scaleLabFocusName.textContent = target.name;
+  if (trueDiameterPx == null) {
+    scaleLabFocusMeta.textContent = `${target.type} uses symbolic sizing here. Distance remains anchored to real AU values.`;
+  } else {
+    scaleLabFocusMeta.textContent = `If Pluto's radius is ${TRUE_SIZE_MIN_RADIUS}px, ${target.name} lands at ${formatPixels(trueDistancePx)} from the Sun.`;
+  }
+
+  const maxSize = Math.max(readableDiameterPx || 0, trueDiameterPx || 0, 1);
+  const maxDistance = Math.max(readableDistancePx || 0, trueDistancePx || 0, 1);
+  scaleLabTitle.textContent = 'Split View';
+  scaleViewSplit.classList.add('active');
+  scaleSplitCopy.textContent = `Same target, two systems. Left is the current readable composition. Right is one consistent physical scale using Pluto as the visibility floor.`;
+  scaleSplitReadableSize.textContent = readableDiameterPx == null ? 'SYMBOLIC' : formatPixels(readableDiameterPx);
+  scaleSplitTrueSize.textContent = trueDiameterPx == null ? 'N/A' : formatPixels(trueDiameterPx);
+  scaleSplitReadableDistance.textContent = readableDistancePx == null
+    ? 'N/A'
+    : `${formatPixels(readableDistancePx)} / ${formatScreens(readableDistancePx)}`;
+  scaleSplitTrueDistance.textContent = trueDistancePx == null
+    ? 'N/A'
+    : `${formatPixels(trueDistancePx)} / ${formatScreens(trueDistancePx)}`;
+  setMeterFill(scaleSplitReadableSizeFill, readableDiameterPx || 0, maxSize);
+  setMeterFill(scaleSplitTrueSizeFill, trueDiameterPx || 0, maxSize);
+  setMeterFill(scaleSplitReadableDistanceFill, readableDistancePx || 0, maxDistance);
+  setMeterFill(scaleSplitTrueDistanceFill, trueDistancePx || 0, maxDistance);
+
+  if (sizeFactor == null) {
+    scaleSplitSummary.textContent = `Distances are compressed by ${distanceFactor.toFixed(1)}x relative to this true scale. ${target.name} is a symbolic object here, so only the distance comparison is literal.`;
+  } else if (sizeFactor >= 1) {
+    scaleSplitSummary.textContent = `${target.name} is rendered about ${sizeFactor.toFixed(1)}x larger than this Pluto-anchored physical scale, while distances are compressed by ${distanceFactor.toFixed(1)}x.`;
+  } else {
+    scaleSplitSummary.textContent = `${target.name} is rendered at about ${(sizeFactor * 100).toFixed(0)}% of its Pluto-anchored physical size, while distances are compressed by ${distanceFactor.toFixed(1)}x.`;
+  }
+}
+
 // ── CLOSING CARD ─────────────────────────────────────────────
 function populateClosingCard() {
   // At our scale: 1 AU = PIXELS_PER_AU px
@@ -1630,6 +1775,7 @@ function loop(ts) {
   // Update HUD
   checkInfoPanel();
   updateRuler();
+  updateScaleLab();
   checkClosingCard();
 
   requestAnimationFrame(loop);

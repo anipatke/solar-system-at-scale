@@ -35,7 +35,60 @@
         <span id="ruler-focus">DEEP SPACE</span>
       </div>
     </div>
+    <div id="scale-note" aria-label="Scale note">
+      <span class="scale-note-label">SCALE NOTE</span>
+      <span class="scale-note-copy">Distances are proportional. Planet sizes are proportional to each other, but not to the distance axis. The Sun and tiny bodies are enlarged so they stay visible.</span>
+    </div>
   </div>
+
+  <aside id="scale-lab" aria-label="Real scale companion views">
+    <div id="scale-lab-header">
+      <div>
+        <p class="scale-lab-kicker">REAL SCALE LAB</p>
+        <h2 id="scale-lab-title">Split View</h2>
+      </div>
+    </div>
+
+    <div id="scale-lab-focus">
+      <span class="scale-lab-label">FOCUS</span>
+      <span id="scale-lab-focus-name">THE SUN</span>
+      <span id="scale-lab-focus-meta">Default readable mode vs physical scale</span>
+    </div>
+
+    <section class="scale-view active" id="scale-view-split" aria-label="Split comparison view">
+      <p class="scale-view-copy" id="scale-split-copy"></p>
+      <div id="scale-split-grid">
+        <article class="scale-compare-card readable">
+          <span class="scale-compare-kicker">READABLE MODE</span>
+          <div class="scale-compare-stat">
+            <span class="scale-stat-label">BODY DIAMETER</span>
+            <span class="scale-stat-value" id="scale-split-readable-size"></span>
+          </div>
+          <div class="scale-meter"><div class="scale-meter-fill" id="scale-split-readable-size-fill"></div></div>
+          <div class="scale-compare-stat">
+            <span class="scale-stat-label">DISTANCE FROM SUN</span>
+            <span class="scale-stat-value" id="scale-split-readable-distance"></span>
+          </div>
+          <div class="scale-meter"><div class="scale-meter-fill" id="scale-split-readable-distance-fill"></div></div>
+        </article>
+
+        <article class="scale-compare-card true">
+          <span class="scale-compare-kicker">TRUE SCALE</span>
+          <div class="scale-compare-stat">
+            <span class="scale-stat-label">BODY DIAMETER</span>
+            <span class="scale-stat-value" id="scale-split-true-size"></span>
+          </div>
+          <div class="scale-meter"><div class="scale-meter-fill" id="scale-split-true-size-fill"></div></div>
+          <div class="scale-compare-stat">
+            <span class="scale-stat-label">DISTANCE FROM SUN</span>
+            <span class="scale-stat-value" id="scale-split-true-distance"></span>
+          </div>
+          <div class="scale-meter"><div class="scale-meter-fill" id="scale-split-true-distance-fill"></div></div>
+        </article>
+      </div>
+      <p id="scale-split-summary"></p>
+    </section>
+  </aside>
 
   <!-- Mute button -->
   <button id="mute-btn" aria-label="Toggle sound">
