@@ -1257,10 +1257,27 @@ function hideInfoPanel() {
 }
 
 // ── RULER HUD ────────────────────────────────────────────────
+function getMaxCameraX() {
+  return Math.max(0, totalScrollPx - canvasW * 0.6);
+}
+
+function getPlanetSnapCameraX(target) {
+  const focusX = canvasW * 0.5;
+  const sceneOffsetX = canvasW * 0.2;
+  const snapTarget = target.distanceAU * PIXELS_PER_AU + sceneOffsetX - focusX;
+  return Math.max(0, Math.min(snapTarget, getMaxCameraX()));
+}
+
+function getRulerPctForCameraX(cameraXValue) {
+  const maxCameraX = getMaxCameraX();
+  if (maxCameraX <= 0) return 0;
+  return Math.max(0, Math.min(cameraXValue / maxCameraX, 1));
+}
+
 function buildRulerNotches() {
   rulerPlanets.innerHTML = '';
   [...PLANETS, ASTEROID_BELT].forEach(p => {
-    const pct = p.distanceAU / TOTAL_AU;
+    const pct = getRulerPctForCameraX(getPlanetSnapCameraX(p));
     const notch = document.createElement('div');
     notch.className = 'ruler-notch planet-notch';
     notch.dataset.planetId = p.id;
@@ -1272,7 +1289,7 @@ function buildRulerNotches() {
   });
 
   PROBES.forEach(probe => {
-    const pct = probe.distanceAU / TOTAL_AU;
+    const pct = getRulerPctForCameraX(getPlanetSnapCameraX(probe));
     const notch = document.createElement('div');
     notch.className = 'ruler-notch probe-notch';
     notch.dataset.probeId = probe.id;
@@ -1285,9 +1302,10 @@ function buildRulerNotches() {
 }
 
 function updateRuler() {
-  // Current distance from Sun
-  const scrollFraction = Math.max(0, cameraX) / totalScrollPx;
-  const currentAU = scrollFraction * TOTAL_AU;
+  const scrollFraction = getRulerPctForCameraX(cameraX);
+  const currentAU = cameraX <= 0
+    ? 0
+    : Math.min(TOTAL_AU, (cameraX + canvasW * 0.3) / PIXELS_PER_AU);
   const currentKm = currentAU * AU_KM;
   const currentLM = currentKm / LIGHT_MINUTE_KM;
 
@@ -1470,7 +1488,7 @@ function applyMomentum(velocity) {
 }
 
 function clampTarget() {
-  const maxScroll = totalScrollPx - canvasW * 0.6;
+  const maxScroll = getMaxCameraX();
   targetCameraX = Math.max(0, Math.min(targetCameraX, maxScroll));
 }
 
@@ -1491,11 +1509,7 @@ function snapToNearestPlanet() {
 
   // Only snap if the nearest planet is within half a screen width of center
   if (nearest && nearestDist < canvasW * 0.22) {
-    // targetCameraX that puts this planet at cx
-    // sx = planet.distanceAU * PIXELS_PER_AU - targetCameraX + canvasW * 0.2 = cx
-    // targetCameraX = planet.distanceAU * PIXELS_PER_AU + canvasW * 0.2 - cx
-    const snapTarget = nearest.distanceAU * PIXELS_PER_AU + canvasW * 0.2 - cx;
-    targetCameraX = Math.max(0, snapTarget);
+    targetCameraX = getPlanetSnapCameraX(nearest);
     isSnapping = true;
     snappingTo = nearest;
   }
