@@ -16,20 +16,6 @@ const LIGHT_MINUTE_KM = 17_987_547.48;
 // distance-per-pixel ratio here. 1 AU = PIXELS_PER_AU px.
 const PIXELS_PER_AU = 2000;   // 1 AU = 2000px → Pluto ~79 screen-widths away
 
-// NAVIGABLE mode: exaggerated sizes so all planets are visible and interactive
-const BASE_PLANET_RADIUS = {
-  sun:     60,
-  mercury: 9,
-  venus:   17,
-  earth:   18,
-  mars:    12,
-  jupiter: 38,
-  saturn:  32,
-  uranus:  22,
-  neptune: 21,
-  pluto:   7,
-};
-
 // TRUE SIZE mode: diameter ratios relative to the Sun's diameter (1.0 = Sun)
 // Sun fills the full canvas height, everything else scales from that.
 // Source: NASA planetary fact sheets.
@@ -63,7 +49,7 @@ const PLANETS = [
     facts: {
       size:   '1.3 million Earths fit inside',
       flight: '~19 years at cruising speed',
-      smell:  'Burning plasma & ozone',
+      smell:  'Like a giant oven mixed with sparklers',
     },
     colors: {
       core:    '#FFF176',
@@ -85,7 +71,7 @@ const PLANETS = [
     facts: {
       size:   '18 Mercurys fit inside Earth',
       flight: '~9 years at cruising speed',
-      smell:  'Sulfur & rotten eggs',
+      smell:  'Like hot metal and fireworks',
     },
     colors: {
       core:  '#9E9E9E',
@@ -106,7 +92,7 @@ const PLANETS = [
     facts: {
       size:   'Nearly the same size as Earth',
       flight: '~5 years at cruising speed',
-      smell:  'Pure sulfuric acid',
+      smell:  'Like a nasty chemistry-lab stink',
     },
     colors: {
       core:  '#F5DEB3',
@@ -127,7 +113,7 @@ const PLANETS = [
     facts: {
       size:   'This is the reference. You are here.',
       flight: 'You\'re already here',
-      smell:  'Petrichor, ocean & life',
+      smell:  'Rain, ocean air, and forests',
     },
     colors: {
       core:  '#1565C0',
@@ -150,7 +136,7 @@ const PLANETS = [
     facts: {
       size:   'About half the size of Earth',
       flight: '~10 years at cruising speed',
-      smell:  'Burnt gunpowder & iron',
+      smell:  'Like dusty rocks and rusty metal',
     },
     colors: {
       core:  '#BF360C',
@@ -171,7 +157,7 @@ const PLANETS = [
     facts: {
       size:   '1,321 Earths fit inside',
       flight: '~80 years at cruising speed',
-      smell:  'Ammonia & rotten eggs',
+      smell:  'Like a giant stinky egg storm',
     },
     colors: {
       core:   '#C8A96E',
@@ -195,7 +181,7 @@ const PLANETS = [
     facts: {
       size:   '764 Earths fit inside',
       flight: '~150 years at cruising speed',
-      smell:  'Ammonia crystals',
+      smell:  'Like cold, sharp cleaning spray',
     },
     colors: {
       core:   '#E8C97A',
@@ -221,7 +207,7 @@ const PLANETS = [
     facts: {
       size:   '63 Earths fit inside',
       flight: '~340 years at cruising speed',
-      smell:  'Hydrogen sulfide — yes, like farts',
+      smell:  'Like the worst fart in the solar system',
     },
     colors: {
       core:  '#80DEEA',
@@ -242,7 +228,7 @@ const PLANETS = [
     facts: {
       size:   '57 Earths fit inside',
       flight: '~555 years at cruising speed',
-      smell:  'Ammonia & methane ice',
+      smell:  'Like a freezing swamp of weird gas',
     },
     colors: {
       core:  '#1A237E',
@@ -264,7 +250,7 @@ const PLANETS = [
     facts: {
       size:   '170 Plutos fit inside Earth',
       flight: '~745 years at cruising speed',
-      smell:  'Carbon monoxide & methane ice',
+      smell:  'Like freezer-burnt ice and cold dust',
     },
     colors: {
       core:  '#8D6E63',
@@ -281,39 +267,49 @@ const TOTAL_AU = PLANETS[PLANETS.length - 1].distanceAU + 4;
 // ── MOON DATA ────────────────────────────────────────────────
 // orbitalKm: distance from planet center (km)
 // diameterKm: moon diameter (km)
-// navOrbitMult: orbital radius as multiple of parent's navigable radius
-// navRadius: dot size in navigable mode (px)
-// True-size orbit uses the same km→px distance scale as the rest of the scene.
-// True-size moon diameter still derives from the rendered Sun size so moons remain visible.
+// Moon systems are rendered as proportional multiples of the parent's radius.
+// Tiny moons still get a minimum visible size.
 const SUN_ACTUAL_R_KM = 695_700;
 
 const MOONS = [
   // Earth
-  { id: 'moon',     parentId: 'earth',   name: 'MOON',     orbitalKm: 384_400,   diameterKm: 3_474, navOrbitMult: 2.5, navRadius: 4, color: '#B0BEC5', retrograde: false, orbitalPeriodDays: 27.32 },
+  { id: 'moon',     parentId: 'earth',   name: 'MOON',     orbitalKm: 384_400,   diameterKm: 3_474, color: '#B0BEC5', retrograde: false, orbitalPeriodDays: 27.32 },
   // Mars
-  { id: 'phobos',   parentId: 'mars',    name: 'PHOBOS',   orbitalKm: 9_376,     diameterKm: 22,    navOrbitMult: 1.8, navRadius: 2, color: '#8D6E63', retrograde: false, orbitalPeriodDays: 0.319 },
-  { id: 'deimos',   parentId: 'mars',    name: 'DEIMOS',   orbitalKm: 23_458,    diameterKm: 12,    navOrbitMult: 2.8, navRadius: 2, color: '#795548', retrograde: false, orbitalPeriodDays: 1.263 },
+  { id: 'phobos',   parentId: 'mars',    name: 'PHOBOS',   orbitalKm: 9_376,     diameterKm: 22,    color: '#8D6E63', retrograde: false, orbitalPeriodDays: 0.319 },
+  { id: 'deimos',   parentId: 'mars',    name: 'DEIMOS',   orbitalKm: 23_458,    diameterKm: 12,    color: '#795548', retrograde: false, orbitalPeriodDays: 1.263 },
   // Jupiter — Galilean moons
-  { id: 'io',       parentId: 'jupiter', name: 'IO',       orbitalKm: 421_700,   diameterKm: 3_643, navOrbitMult: 1.6, navRadius: 4, color: '#F4CF47', retrograde: false, orbitalPeriodDays: 1.769 },
-  { id: 'europa',   parentId: 'jupiter', name: 'EUROPA',   orbitalKm: 671_100,   diameterKm: 3_122, navOrbitMult: 2.3, navRadius: 3, color: '#CFB99A', retrograde: false, orbitalPeriodDays: 3.551 },
-  { id: 'ganymede', parentId: 'jupiter', name: 'GANYMEDE', orbitalKm: 1_070_400, diameterKm: 5_268, navOrbitMult: 3.5, navRadius: 5, color: '#9E9E9E', retrograde: false, orbitalPeriodDays: 7.155 },
-  { id: 'callisto', parentId: 'jupiter', name: 'CALLISTO', orbitalKm: 1_882_700, diameterKm: 4_821, navOrbitMult: 5.0, navRadius: 4, color: '#616161', retrograde: false, orbitalPeriodDays: 16.69 },
+  { id: 'io',       parentId: 'jupiter', name: 'IO',       orbitalKm: 421_700,   diameterKm: 3_643, color: '#F4CF47', retrograde: false, orbitalPeriodDays: 1.769 },
+  { id: 'europa',   parentId: 'jupiter', name: 'EUROPA',   orbitalKm: 671_100,   diameterKm: 3_122, color: '#CFB99A', retrograde: false, orbitalPeriodDays: 3.551 },
+  { id: 'ganymede', parentId: 'jupiter', name: 'GANYMEDE', orbitalKm: 1_070_400, diameterKm: 5_268, color: '#9E9E9E', retrograde: false, orbitalPeriodDays: 7.155 },
+  { id: 'callisto', parentId: 'jupiter', name: 'CALLISTO', orbitalKm: 1_882_700, diameterKm: 4_821, color: '#616161', retrograde: false, orbitalPeriodDays: 16.69 },
   // Saturn
-  { id: 'rhea',     parentId: 'saturn',  name: 'RHEA',     orbitalKm: 527_108,   diameterKm: 1_528, navOrbitMult: 2.5, navRadius: 3, color: '#CFD8DC', retrograde: false, orbitalPeriodDays: 4.518 },
-  { id: 'titan',    parentId: 'saturn',  name: 'TITAN',    orbitalKm: 1_221_870, diameterKm: 5_149, navOrbitMult: 3.8, navRadius: 5, color: '#E8A84E', retrograde: false, orbitalPeriodDays: 15.95 },
+  { id: 'rhea',     parentId: 'saturn',  name: 'RHEA',     orbitalKm: 527_108,   diameterKm: 1_528, color: '#CFD8DC', retrograde: false, orbitalPeriodDays: 4.518 },
+  { id: 'titan',    parentId: 'saturn',  name: 'TITAN',    orbitalKm: 1_221_870, diameterKm: 5_149, color: '#E8A84E', retrograde: false, orbitalPeriodDays: 15.95 },
   // Uranus
-  { id: 'titania',  parentId: 'uranus',  name: 'TITANIA',  orbitalKm: 435_910,   diameterKm: 1_578, navOrbitMult: 2.5, navRadius: 3, color: '#80DEEA', retrograde: false, orbitalPeriodDays: 8.706 },
-  { id: 'oberon',   parentId: 'uranus',  name: 'OBERON',   orbitalKm: 583_520,   diameterKm: 1_523, navOrbitMult: 3.5, navRadius: 3, color: '#4DD0E1', retrograde: false, orbitalPeriodDays: 13.46 },
+  { id: 'titania',  parentId: 'uranus',  name: 'TITANIA',  orbitalKm: 435_910,   diameterKm: 1_578, color: '#80DEEA', retrograde: false, orbitalPeriodDays: 8.706 },
+  { id: 'oberon',   parentId: 'uranus',  name: 'OBERON',   orbitalKm: 583_520,   diameterKm: 1_523, color: '#4DD0E1', retrograde: false, orbitalPeriodDays: 13.46 },
   // Neptune
-  { id: 'triton',   parentId: 'neptune', name: 'TRITON',   orbitalKm: 354_759,   diameterKm: 2_707, navOrbitMult: 2.2, navRadius: 4, color: '#5C6BC0', retrograde: true,  orbitalPeriodDays: 5.877 },
+  { id: 'triton',   parentId: 'neptune', name: 'TRITON',   orbitalKm: 354_759,   diameterKm: 2_707, color: '#5C6BC0', retrograde: true,  orbitalPeriodDays: 5.877 },
   // Pluto
-  { id: 'charon',   parentId: 'pluto',   name: 'CHARON',   orbitalKm: 19_591,    diameterKm: 1_212, navOrbitMult: 2.2, navRadius: 3, color: '#A1887F', retrograde: false, orbitalPeriodDays: 6.387 },
+  { id: 'charon',   parentId: 'pluto',   name: 'CHARON',   orbitalKm: 19_591,    diameterKm: 1_212, color: '#A1887F', retrograde: false, orbitalPeriodDays: 6.387 },
 ];
 
 // ── ASTEROID BELT ────────────────────────────────────────────
 // Main belt: 2.2–3.2 AU from the Sun
 const BELT_INNER_AU = 2.2;
 const BELT_OUTER_AU = 3.2;
+const ASTEROID_BELT = {
+  id: 'asteroid-belt',
+  name: 'ASTEROID BELT',
+  symbol: '☄',
+  type: 'BELT',
+  distanceAU: (BELT_INNER_AU + BELT_OUTER_AU) / 2,
+  facts: {
+    size: 'Millions of rocky leftovers, from dust to dwarf-planet chunks',
+    flight: '~30 years at cruising speed to the middle',
+    smell: 'Like a smashed-up rock quarry in deep freeze',
+  },
+};
 
 // ── STATE ────────────────────────────────────────────────────
 let cameraX = 0;           // current horizontal scroll offset in pixels
@@ -335,8 +331,6 @@ let scrollIdleTimer = null;  // timer to detect scroll stop
 let isSnapping = false;      // currently auto-centering a planet
 let snappingTo  = null;      // which planet is being snapped to
 let snapZoom    = 0;         // 0→1 animated zoom when locked onto a planet
-let trueSize = true;         // true = TRUE SIZE mode, false = NAVIGABLE
-let modeTransition = 1.0;   // 0 = navigable, 1 = true size (lerps between)
 
 // ── ELEMENTS ─────────────────────────────────────────────────
 const canvas   = document.getElementById('space');
@@ -349,9 +343,6 @@ const rulerKm  = document.getElementById('ruler-km');
 const rulerLight = document.getElementById('ruler-light');
 const rulerPlanets = document.getElementById('ruler-planets');
 const muteBtn  = document.getElementById('mute-btn');
-const modeBtn  = document.getElementById('mode-btn');
-const modeLabel = document.getElementById('mode-label');
-const modeSub   = document.getElementById('mode-sub');
 const muteIcon = document.getElementById('mute-icon');
 const audio    = document.getElementById('ambient');
 
@@ -448,9 +439,8 @@ function drawBelt() {
     const sx = p.worldX - cameraX + canvasW * 0.2;
     if (sx < -4 || sx > canvasW + 4) return;
     const sy = canvasH / 2 + p.yFrac * maxSpread;
-    const dispSize = p.size * (1 - modeTransition * 0.4);  // slightly smaller in true-size
     ctx.beginPath();
-    ctx.arc(sx, sy, Math.max(0.4, dispSize), 0, Math.PI * 2);
+    ctx.arc(sx, sy, Math.max(0.4, p.size), 0, Math.PI * 2);
     ctx.fillStyle = `rgba(160,145,115,${p.opacity})`;
     ctx.fill();
   });
@@ -463,6 +453,9 @@ function drawMoons(dt) {
     const parent = PLANETS.find(p => p.id === moon.parentId);
     const parentX = planetScreenX(parent);
     const parentY = planetScreenY();
+    const parentDisplayR = getDisplayRadius(parent, parentX);
+    const parentVisualExtentR = getVisualExtentRadius(parent, parentX);
+    const orbitTilt = (parent.tiltDeg * Math.PI) / 180;
 
     // Skip if parent planet is way off-screen (orbit ring + dot would be invisible anyway)
     if (parentX < -canvasW || parentX > canvasW * 2) return;
@@ -473,29 +466,37 @@ function drawMoons(dt) {
 
     const angle = moonAngles[moon.id];
 
-    // Orbital radius: lerp navigable ↔ true-size
-    const navOrbitPx  = moon.navOrbitMult * BASE_PLANET_RADIUS[moon.parentId];
-    const trueOrbitPx = moon.orbitalKm / AU_KM * PIXELS_PER_AU;
-    const orbitPx = navOrbitPx + (trueOrbitPx - navOrbitPx) * modeTransition;
+    // Moon systems are local overlays around each parent, not literal positions
+    // on the same horizontal scale as the planets.
+    const orbitPx = getMoonOverlayOrbitRadius(parent, parentDisplayR, parentVisualExtentR, moon);
 
     // Moon display radius
-    const trueMoonR  = Math.max(0.8, (moon.diameterKm / 2) / SUN_ACTUAL_R_KM * (canvasH / 2));
-    const moonDispR  = moon.navRadius + (trueMoonR - moon.navRadius) * modeTransition;
+    const moonDispR  = Math.max(0.8, (moon.diameterKm / 2) / SUN_ACTUAL_R_KM * (canvasH / 2));
+    // Keep moon orbits comfortably outside the parent's visual footprint.
+    // This is intentionally a presentation floor: the rendered planets are
+    // exaggerated relative to distance scale, so strict non-overlap still
+    // reads as "too close" for large bodies like Jupiter and Saturn.
+    const orbitPaddingPx = Math.max(6, parentVisualExtentR * 0.18);
+    const minVisibleOrbitPx = parentVisualExtentR + moonDispR + orbitPaddingPx;
+    const visibleOrbitPx = Math.max(orbitPx, minVisibleOrbitPx);
 
     // Orbit ring (faint ellipse centered on parent)
     ctx.save();
     ctx.translate(parentX, parentY);
+    ctx.rotate(orbitTilt);
     ctx.scale(1, yComp);
     ctx.beginPath();
-    ctx.arc(0, 0, orbitPx, 0, Math.PI * 2);
+    ctx.arc(0, 0, visibleOrbitPx, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(240,230,218,0.09)';
     ctx.lineWidth = 0.5;
     ctx.stroke();
     ctx.restore();
 
     // Moon dot
-    const moonX = parentX + Math.cos(angle) * orbitPx;
-    const moonY = parentY + Math.sin(angle) * orbitPx * yComp;
+    const localMoonX = Math.cos(angle) * visibleOrbitPx;
+    const localMoonY = Math.sin(angle) * visibleOrbitPx * yComp;
+    const moonX = parentX + localMoonX * Math.cos(orbitTilt) - localMoonY * Math.sin(orbitTilt);
+    const moonY = parentY + localMoonX * Math.sin(orbitTilt) + localMoonY * Math.cos(orbitTilt);
     ctx.beginPath();
     ctx.arc(moonX, moonY, Math.max(0.8, moonDispR), 0, Math.PI * 2);
     ctx.fillStyle = moon.color;
@@ -512,20 +513,47 @@ function planetScreenY() {
   return canvasH * 0.5;
 }
 
-// ── RADIUS CALCULATION ────────────────────────────────────────
-// Returns the interpolated display radius for the current mode transition.
-function getRadius(planet) {
-  const navigableR = BASE_PLANET_RADIUS[planet.id];
+function getPlanetActualRadiusKm(planet) {
+  return SIZE_RATIO_TO_SUN[planet.id] * SUN_ACTUAL_R_KM;
+}
 
+function getMoonOverlayOrbitRadius(parent, parentDisplayR, parentVisualExtentR, moon) {
+  const parentActualRadiusKm = getPlanetActualRadiusKm(parent);
+  const orbitMultiple = moon.orbitalKm / parentActualRadiusKm;
+  const baseOffsetPx = parentVisualExtentR + Math.max(8, parentDisplayR * 0.35);
+  const orbitStepPx = Math.max(6, parentDisplayR * 0.45);
+
+  return baseOffsetPx + Math.log2(Math.max(1.1, orbitMultiple)) * orbitStepPx;
+}
+
+// ── RADIUS CALCULATION ────────────────────────────────────────
+// Returns the rendered radius for the single true-size view.
+function getRadius(planet) {
   // True size: Sun radius = canvasH / 2, everything else proportional
   const sunTrueR = canvasH / 2;
-  const trueR = Math.max(
+  return Math.max(
     TRUE_SIZE_MIN_RADIUS,
     sunTrueR * SIZE_RATIO_TO_SUN[planet.id]
   );
+}
 
-  // Lerp between navigable (t=0) and true size (t=1)
-  return navigableR + (trueR - navigableR) * modeTransition;
+function getDisplayRadius(planet, screenX = planetScreenX(planet)) {
+  const r = getRadius(planet);
+
+  if (planet === snappingTo && planet.id !== 'sun' && snapZoom > 0.01) {
+    return r * (1 + snapZoom * 0.8);
+  }
+  return r;
+}
+
+function getVisualExtentRadius(planet, screenX = planetScreenX(planet)) {
+  const displayR = getDisplayRadius(planet, screenX);
+
+  if (planet.hasRings) {
+    return displayR * 2.2;
+  }
+
+  return displayR;
 }
 
 // ── PIXEL-ART PLANET DRAWING ──────────────────────────────────
@@ -544,23 +572,7 @@ function drawPlanet(planet, dt) {
   const dir = planet.retrograde ? -1 : 1;
   rotations[planet.id] += planet.rotationSpeed * dir * dt * 0.016;
 
-  // Zoom emphasis for small planets — only in navigable mode
-  let displayR = r;
-  if (planet.small && modeTransition < 0.5) {
-    const zoomStrength = 1 - modeTransition * 2;  // fades out as true size kicks in
-    const dist = Math.abs(x - canvasW * 0.5);
-    const zoomRange = canvasW * 0.3;
-    if (dist < zoomRange) {
-      const t = 1 - (dist / zoomRange);
-      displayR = r * (1 + t * 1.2 * zoomStrength);
-    }
-  }
-
-  // Snap zoom — planet swells to fill more screen when locked in (skip Sun, it's already huge)
-  if (planet === snappingTo && planet.id !== 'sun' && snapZoom > 0.01) {
-    // Scale up by up to 80% — feels significant without being jarring
-    displayR *= (1 + snapZoom * 0.8);
-  }
+  const displayR = getDisplayRadius(planet, x);
 
   const tilt = (planet.tiltDeg * Math.PI) / 180;
   const rot  = rotations[planet.id];
@@ -770,16 +782,27 @@ function drawBandedPlanet(planet, r, rot) {
 
   // Great Red Spot for Jupiter
   if (planet.id === 'jupiter') {
-    ctx.save();
-    ctx.rotate(rot);
-    const spotGrad = ctx.createRadialGradient(r * 0.3, r * 0.08, 0, r * 0.3, r * 0.08, r * 0.18);
-    spotGrad.addColorStop(0, '#C62828');
-    spotGrad.addColorStop(1, 'transparent');
-    ctx.fillStyle = spotGrad;
-    ctx.beginPath();
-    ctx.ellipse(r * 0.3, r * 0.08, r * 0.18, r * 0.1, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+    // Treat the spot as a feature on Jupiter's surface, not a moon orbiting the center.
+    // As the planet rotates, the spot should slide across the visible disc and disappear
+    // behind the limb rather than spin in a circle.
+    const spotPhase = rot % (Math.PI * 2);
+    const spotFrontness = Math.cos(spotPhase);
+
+    if (spotFrontness > -0.15) {
+      const spotX = Math.sin(spotPhase) * r * 0.72;
+      const spotY = r * 0.08;
+      const spotRx = r * 0.18 * Math.max(0.2, Math.abs(spotFrontness));
+      const spotRy = r * 0.1;
+      const spotAlpha = Math.max(0, spotFrontness) * 0.9;
+      const spotGrad = ctx.createRadialGradient(spotX, spotY, 0, spotX, spotY, spotRx);
+
+      spotGrad.addColorStop(0, `rgba(198,40,40,${spotAlpha})`);
+      spotGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = spotGrad;
+      ctx.beginPath();
+      ctx.ellipse(spotX, spotY, spotRx, spotRy, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   // Terminator
@@ -867,7 +890,7 @@ function checkInfoPanel() {
   let nearest = null;
   let nearestDist = Infinity;
 
-  PLANETS.forEach(p => {
+  [...PLANETS, ASTEROID_BELT].forEach(p => {
     const sx = planetScreenX(p);
     const dist = Math.abs(sx - cx);
     if (dist < nearestDist) {
@@ -907,7 +930,7 @@ function hideInfoPanel() {
 // ── RULER HUD ────────────────────────────────────────────────
 function buildRulerNotches() {
   rulerPlanets.innerHTML = '';
-  PLANETS.forEach(p => {
+  [...PLANETS, ASTEROID_BELT].forEach(p => {
     const pct = p.distanceAU / TOTAL_AU;
     const notch = document.createElement('div');
     notch.className = 'ruler-notch';
@@ -1099,10 +1122,16 @@ function tryStartAudio() {
   if (audioStarted) return;
   audioStarted = true;
   audio.volume = 0.18;
+  audio.loop = true;
   audio.play().catch(() => {
     // Autoplay blocked — that's fine, user can unmute
   });
 }
+
+audio.addEventListener('ended', () => {
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
+});
 
 muteBtn.addEventListener('click', () => {
   isMuted = !isMuted;
@@ -1110,12 +1139,6 @@ muteBtn.addEventListener('click', () => {
   muteBtn.classList.toggle('muted', isMuted);
   muteIcon.textContent = isMuted ? '✕' : '♪';
   if (!audioStarted) tryStartAudio();
-});
-
-modeBtn.addEventListener('click', () => {
-  trueSize = !trueSize;
-  modeLabel.textContent = trueSize ? 'TRUE SIZE' : 'NAVIGABLE';
-  modeSub.textContent   = trueSize ? 'SWITCH TO NAVIGABLE' : 'SWITCH TO TRUE SIZE';
 });
 
 // ── MAIN LOOP ────────────────────────────────────────────────
@@ -1128,10 +1151,6 @@ function loop(ts) {
 
   // Animate snap zoom — eases in when locked, eases out when scrolling away
   snapZoom += ((isSnapping ? 1 : 0) - snapZoom) * 0.06;
-
-  // Animate mode transition (0 = navigable, 1 = true size)
-  const targetMode = trueSize ? 1.0 : 0.0;
-  modeTransition += (targetMode - modeTransition) * 0.06;
 
   // Clear
   ctx.clearRect(0, 0, canvasW, canvasH);
