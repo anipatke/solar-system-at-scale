@@ -829,8 +829,11 @@ const SCROLL_SENSITIVITY = 6.0;   // faster pan to cover the vast distances
 const TOUCH_SENSITIVITY  = 4.0;
 const LERP_SPEED         = 0.08;
 
-let touchStartY = 0;
-let lastTouchY  = 0;
+let touchStartY    = 0;
+let lastTouchY     = 0;
+let touchVelocity  = 0;    // px/frame momentum
+let lastTouchTime  = 0;
+let momentumRaf    = null;
 
 function onWheel(e) {
   if (closingShown) return;
@@ -842,21 +845,48 @@ function onWheel(e) {
 }
 
 function onTouchStart(e) {
-  touchStartY = e.touches[0].clientY;
-  lastTouchY  = touchStartY;
+  touchStartY   = e.touches[0].clientY;
+  lastTouchY    = touchStartY;
+  lastTouchTime = Date.now();
+  touchVelocity = 0;
   clearTimeout(scrollIdleTimer);
   isSnapping = false;
+  // Cancel any ongoing momentum
+  if (momentumRaf) { cancelAnimationFrame(momentumRaf); momentumRaf = null; }
 }
 
 function onTouchMove(e) {
   if (closingShown) return;
   dismissIntro();
   e.preventDefault();
+  const now = Date.now();
   const dy = lastTouchY - e.touches[0].clientY;
-  lastTouchY = e.touches[0].clientY;
+  const dt = Math.max(1, now - lastTouchTime);
+  // Track velocity in px/ms
+  touchVelocity = dy / dt;
+  lastTouchY    = e.touches[0].clientY;
+  lastTouchTime = now;
   targetCameraX += dy * TOUCH_SENSITIVITY;
   clampTarget();
-  scheduleSnap();
+}
+
+function onTouchEnd() {
+  if (closingShown) return;
+  // Launch momentum scroll from flick velocity
+  const initialVelocity = touchVelocity * TOUCH_SENSITIVITY * 16; // scale to px/frame at 60fps
+  applyMomentum(initialVelocity);
+}
+
+function applyMomentum(velocity) {
+  if (Math.abs(velocity) < 0.5) {
+    // Velocity exhausted — now snap
+    scheduleSnap();
+    return;
+  }
+  targetCameraX += velocity;
+  clampTarget();
+  // Friction: reduce velocity each frame
+  momentumRaf = requestAnimationFrame(() => applyMomentum(velocity * 0.92));
 }
 
 function clampTarget() {
@@ -883,7 +913,7 @@ function snapToNearestPlanet() {
   });
 
   // Only snap if the nearest planet is within half a screen width of center
-  if (nearest && nearestDist < canvasW * 0.5) {
+  if (nearest && nearestDist < canvasW * 0.22) {
     // targetCameraX that puts this planet at cx
     // sx = planet.distanceAU * PIXELS_PER_AU - targetCameraX + canvasW * 0.2 = cx
     // targetCameraX = planet.distanceAU * PIXELS_PER_AU + canvasW * 0.2 - cx
@@ -972,6 +1002,7 @@ window.addEventListener('resize', () => {
 window.addEventListener('wheel', onWheel, { passive: false });
 window.addEventListener('touchstart', onTouchStart, { passive: true });
 window.addEventListener('touchmove', onTouchMove, { passive: false });
+window.addEventListener('touchend',  onTouchEnd,  { passive: true });
 
 // ── KICK OFF ─────────────────────────────────────────────────
 init();
