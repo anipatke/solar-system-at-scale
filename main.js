@@ -860,7 +860,7 @@ function onTouchMove(e) {
   dismissIntro();
   e.preventDefault();
   const now = Date.now();
-  const dy = lastTouchY - e.touches[0].clientY;
+  const dy = e.touches[0].clientY - lastTouchY;
   const dt = Math.max(1, now - lastTouchTime);
   // Track velocity in px/ms
   touchVelocity = dy / dt;
