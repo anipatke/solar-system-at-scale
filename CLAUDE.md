@@ -79,20 +79,45 @@ Two modes toggled via the **TRUE SIZE / NAVIGABLE** button (bottom-left):
 
 ## Bodies Included
 
-Sun + all 8 planets + Pluto, in order:
+Sun + all 8 planets + Pluto + asteroid belt + 13 moons, in order:
 
 | Body | Notes |
 |------|-------|
 | Sun | Starting point |
 | Mercury | Small planet — zoom emphasis in navigable mode |
 | Venus | Retrograde rotation |
-| Earth | |
-| Mars | Small planet — zoom emphasis in navigable mode |
-| Jupiter | Fast rotation (~10hr day), Great Red Spot |
-| Saturn | Rings rendered front/back layered |
-| Uranus | 98° tilt — rolls on its side |
-| Neptune | |
-| Pluto | **A planet. Not a dwarf planet. Non-negotiable.** |
+| Earth | Moon orbiting |
+| Mars | Phobos + Deimos orbiting (Phobos very fast — 0.32 day period) |
+| **Asteroid Belt** | 320 particles, 2.2–3.2 AU |
+| Jupiter | Fast rotation (~10hr day), Great Red Spot; Io, Europa, Ganymede, Callisto orbiting |
+| Saturn | Rings rendered front/back layered; Rhea + Titan orbiting |
+| Uranus | 98° tilt — rolls on its side; Titania + Oberon orbiting |
+| Neptune | Triton orbiting (retrograde) |
+| Pluto | **A planet. Not a dwarf planet. Non-negotiable.** Charon orbiting |
+
+### Moons
+
+13 moons rendered as animated dots with faint orbit rings. Orbital radii lerp between modes:
+- **Navigable:** proportional multiple of parent's navigable radius
+- **True size:** scaled from Sun diameter (695,700 km = canvasH/2 px) — Moon ends up ~276px from Earth, Galilean moons extend off-screen, which is the point
+
+Time warp: 1 real second ≈ 1 simulated day. Phobos visibly zips around Mars.
+
+| Moon | Parent | Orbital period |
+|------|--------|----------------|
+| Moon | Earth | 27.3 days |
+| Phobos | Mars | 0.32 days |
+| Deimos | Mars | 1.26 days |
+| Io | Jupiter | 1.77 days |
+| Europa | Jupiter | 3.55 days |
+| Ganymede | Jupiter | 7.16 days |
+| Callisto | Jupiter | 16.69 days |
+| Rhea | Saturn | 4.52 days |
+| Titan | Saturn | 15.95 days |
+| Titania | Uranus | 8.71 days |
+| Oberon | Uranus | 13.46 days |
+| Triton | Neptune | 5.88 days (retrograde) |
+| Charon | Pluto | 6.39 days |
 
 ---
 
@@ -189,7 +214,7 @@ Follows the brand in `branding.md`. This is a **Vibe Lab** project — accent co
   - Planet name notches mark each body's position on the ruler
   - Moving purple needle tracks scroll position
 - **Mute/unmute button** — bottom-right corner
-- **TRUE SIZE / NAVIGABLE toggle** — bottom-left corner
+- **TRUE SIZE / NAVIGABLE toggle** — top-right corner
 - Nothing else. No header, no footer, no nav chrome.
 
 ---
@@ -219,7 +244,7 @@ After Pluto's info panel, a closing message card appears with:
 - How much further to the **Oort Cloud outer edge** (~100,000 AU — ~2,500x)
 - How much further to **Proxima Centauri** (~268,000 AU / 4.24 ly — ~6,700x)
 - Framed in terms of "at this same scale, you would need to scroll X more"
-- Closing CTA links back to `anipatke.com.au`
+- Closing CTA links back to `anipatke.com`
 - Tone: awe-inspiring, human, slightly wry — matches brand voice
 
 ---
@@ -257,9 +282,12 @@ Plain hyperlink from the main Vibe Lab site. Opens as its own page. No iframe, n
 
 ## Known Improvement Areas (future sessions)
 
-- [ ] Consider adding asteroid belt as a sparse dot field between Mars and Jupiter
 - [ ] Mobile: info panel position could be improved for small screens
 - [ ] Could add a "share" button at the Pluto closing card
 - [ ] Scroll speed could be user-adjustable (fast/slow toggle)
 - [ ] Intro tagline copy could be sharpened
 - [ ] Vercel domain: `solar-system-at-scale.anipatke.com.au` — set CNAME to `cname.vercel-dns.com`
+- [ ] Moon labels — currently none shown (would clutter); could appear on snap-zoom or hover
+- [ ] Moon orbital inclinations — all shown as flat circles; could tilt each orbit to match actual inclination
+- [ ] Info panel could include moon count / notable moon facts per planet
+- [ ] Snap zoom (planet swells when locked in) — currently 80% scale-up; may want to tune per planet size
