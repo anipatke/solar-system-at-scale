@@ -1481,7 +1481,7 @@ function updateScaleLab() {
 
   const maxSize = Math.max(readableDiameterPx || 0, trueDiameterPx || 0, 1);
   const maxDistance = Math.max(readableDistancePx || 0, trueDistancePx || 0, 1);
-  scaleLabTitle.textContent = 'Split View';
+  scaleLabTitle.textContent = 'Split View [Beta]';
   scaleViewSplit.classList.add('active');
   scaleSplitCopy.textContent = `Same target, two systems. Left is the current readable composition. Right is one consistent physical scale using Pluto as the visibility floor.`;
   scaleSplitReadableSize.textContent = readableDiameterPx == null ? 'SYMBOLIC' : formatPixels(readableDiameterPx);
