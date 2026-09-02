@@ -1,5 +1,5 @@
 # Solar System at Scale — Codex Notes
 
-Use `context.md` as the source of truth for this repo.
+Read `AGENTS.md` first for the active Savepoint workflow, then use `context.md` for compact implementation facts.
 
-This file is intentionally minimal so project guidance does not drift across AI-specific docs.
+Do not duplicate project guidance here; product, design, and task authority remain in `.savepoint/`.

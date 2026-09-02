@@ -1,196 +1,72 @@
-# Solar System at Scale — Shared Context
+# Solar System at Scale — Implementation Context
 
-This file is the shared AI context for this repo. It replaces overlapping guidance in `CLAUDE.md` and `Codex.md` where they disagree with the current implementation.
+Use this file for compact implementation facts. Product intent lives in `.savepoint/PRD.md`; architecture lives in `.savepoint/Design.md`; active work is selected by `.savepoint/router.md`.
 
-## Project
+## Product
 
-- Standalone interactive web experience for `solar-system-at-scale.anipatke.com.au`
-- Hosted on Vercel as a static site
-- Repo: `anipatke/solar-system-at-scale`
-- Push to `master` to deploy
+- Static interactive journey from the Sun to Pluto at `solar-system-at-scale.anipatke.com.au`.
+- Vertical wheel, touch, and pointer-drag input move a horizontal camera through proportional AU distances.
+- The emptiness between bodies is the central experience.
+- Pluto is a planet in this project’s voice and structure.
 
-## Stack
+## Current stack and deployment
 
-- Vanilla JavaScript
-- HTML canvas
-- Static assets only
-- No framework
-- No dependencies
-- No build step
+- Vanilla JavaScript, semantic HTML, CSS, and one HTML Canvas 2D scene.
+- No framework or build step; Vercel serves the repository as static files.
+- `package.json` records `@vercel/analytics`; the page currently loads `/_vercel/insights/script.js` directly.
+- Pushes to `master` deploy the site.
 
-## Core Files
+## Runtime files
 
-- `index.html`: page shell and UI elements
-- `style.css`: brand tokens, layout, overlays, controls
-- `main.js`: canvas rendering, scroll input, HUD, planet/moon systems, info panels
-- `audio/ambient.mp3`: ambient loop
-- `branding.md`: brand direction
-- `vercel.json`: static hosting config
+- `index.html`: page shell, ruler, Scale Lab, modes, two possible information panels, intro, closing state, audio markup, and analytics script.
+- `style.css`: Atari-noir tokens, overlays, controls, panels, and responsive layout.
+- `main.js`: body/probe data, camera and input state, Canvas rendering, focus snapping, HUD, Scale Lab, cards, and audio behavior.
+- `audio/ambient.mp3`: current ambient loop; removal is planned in v1 E04.
+- `vercel.json`: SPA-style static rewrite and security response headers.
 
-## Non-Negotiables
+## Current scale model
 
-- Keep the repo dependency-free
-- Preserve the canvas-first architecture
-- Do not add React, Tailwind, bundlers, or a build pipeline
-- Favor small direct changes over extra abstraction
-- Preserve the Atari-noir visual language
-- Pluto is a planet in this project
+- Planet and belt positions use `PIXELS_PER_AU = 2000`.
+- Screen X is `distanceAU * PIXELS_PER_AU - cameraX + canvasW * 0.2`.
+- Planet radii use real size ratios relative to a viewport-height Sun, with a `1.5px` minimum and temporary snap enlargement.
+- The scale note discloses that body sizes do not share the distance-axis scale.
+- Moon systems are compressed local overlays based on parent-relative orbital distance; they are not literal AU-axis positions.
 
-## Visual Direction
+## Current content
 
-- Background: deep space black `#121212`
-- Accent: Vibe Purple `#B1A1DF`
-- Surface: near-black panels
-- Typography:
-  - `Chakra Petch` for headings
-  - `Space Mono` for body/UI copy
-  - `Press Start 2P` for labels and ruler notches
-- Planets are rendered directly in canvas
-- Pixel-art / chunky illustrative style, not photorealistic
-- Saturn rings are layered front/back
-- Jupiter has a Great Red Spot
-- Avoid neon-heavy cyberpunk styling
+- Sun, Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, and the main asteroid belt.
+- Thirteen moons: Moon, Phobos, Deimos, Io, Europa, Ganymede, Callisto, Rhea, Titan, Titania, Oberon, Triton, and Charon.
+- Planet mode and probe mode share the ruler and focus system.
+- Information panels currently show three emoji-led facts; probe clusters may show two panels.
+- Ambient audio currently starts after the first journey interaction and has a bottom-right mute control.
 
-## Interaction Model
+## Current rendering
 
-- Vertical wheel and touch input drive horizontal movement
-- Camera movement is smoothed with lerp
-- After scroll idle, the camera snaps to the nearest focus target
-- Audio starts on first user interaction
-- Mute button is bottom-right
-- There is no longer a navigable/true-size toggle in the UI
+- Stars, asteroid particles, planets, rings, moons, probes, and labels are drawn in the 2D canvas loop.
+- Planets use gradients and clipped procedural shapes; Jupiter uses rectangular cloud bands and a moving Great Red Spot.
+- The asteroid belt is a generated haze plus circular particles across 2.2–3.2 AU.
+- Off-screen bodies are culled and camera movement is eased.
 
-## Current Scale Model
+## Approved v1 direction
 
-### Planet distances
+- E01: replace generic and stale documentation with repo-specific sources of truth.
+- E02: add lightweight native WebGL spheres for every planet, recognisable materials, Saturn rings, focus sizing, and a 2D fallback.
+- E03: replace the belt haze with sparse reusable 3D asteroid instances and restrained depth/parallax.
+- E04: simplify to one two-fact card, calm moon motion, demote scale explanation, remove audio and its control, and validate responsiveness/accessibility.
 
-- Planet-to-planet spacing uses a fixed scene scale:
+Planned behavior must not be described as current behavior until its epic is implemented and audited.
 
-```js
-PIXELS_PER_AU = 2000
-```
+## Visual direction
 
-- Planet screen X:
+- Atari-noir interface: `#121212` background, `#F0E6DA` text, `#B1A1DF` primary accent, and `#A4C639` for probe state.
+- `Chakra Petch` headings, `Space Mono` body/UI, and sparing `Press Start 2P` labels.
+- Celestial bodies should have coherent volume and material without becoming a photorealistic simulation.
+- Avoid neon-heavy cyberpunk styling, dense dashboards, playful bounce, and decorative emoji lists.
 
-```js
-planet.distanceAU * PIXELS_PER_AU - cameraX + canvasW * 0.2
-```
+## Working rules
 
-- This means interplanet distances are on a consistent AU-based horizontal axis.
-
-### Planet sizes
-
-- Planet sizes are based on real diameter ratios relative to the Sun
-- Current true-size anchor:
-
-```js
-sun radius = canvasH / 2
-```
-
-- Planet radius is:
-
-```js
-Math.max(TRUE_SIZE_MIN_RADIUS, sunTrueR * SIZE_RATIO_TO_SUN[planet.id])
-```
-
-- `TRUE_SIZE_MIN_RADIUS = 1.5` means tiny planets can be enlarged for visibility
-- Snapped planets can get a temporary scale-up via `snapZoom`
-
-### Moon systems
-
-- Moon systems are **not** drawn as literal positions on the same solar-system distance axis as the planets
-- They are rendered as **local overlays** around each parent planet
-- Orbit radius is compressed from the real orbit multiple using `getMoonOverlayOrbitRadius(...)`
-- This is intentional so moons stay visually attached to their parent instead of stretching toward neighboring planets
-- Moon dots still use real diameter ratios relative to the Sun, with a minimum visible size of `0.8px`
-- Moon orbit overlays are tilted to match the parent planet's tilt
-- Saturn's moon plane now visually aligns with Saturn's tilted ring plane
-
-### Honest summary
-
-- Planet distances: proportional on the AU axis
-- Planet sizes: mostly proportional to the Sun, except tiny-body minimums and snap zoom
-- Moon systems: local overlay visualization, not global-distance positions
-
-## Bodies Included
-
-- Sun
-- Mercury
-- Venus
-- Earth
-- Mars
-- Asteroid Belt
-- Jupiter
-- Saturn
-- Uranus
-- Neptune
-- Pluto
-- 13 moons
-
-## Asteroid Belt
-
-- Main belt spans `2.2–3.2 AU`
-- Rendered as particle field
-- Included as a center-focus info target
-- Included in ruler notches
-- Has the same info-panel treatment as planets
-
-## Moon Set
-
-- Moon
-- Phobos
-- Deimos
-- Io
-- Europa
-- Ganymede
-- Callisto
-- Rhea
-- Titan
-- Titania
-- Oberon
-- Triton
-- Charon
-
-## Planet Rotation / Tilt
-
-- Planet bodies rotate in the render loop
-- Retrograde planets spin backward
-- Tilt values are encoded per body
-- Jupiter's Great Red Spot now behaves like a surface feature, not a dot orbiting the center
-
-## HUD / Panels
-
-- Fixed ruler at the top
-- Ruler shows distance from Sun in km and light-time
-- Ruler includes body notches
-- Info panel auto-appears for the nearest centered focus target
-- Focus targets currently include all planets plus the asteroid belt
-- Closing card appears after passing Pluto
-
-## Audio
-
-- Source: `audio/ambient.mp3`
-- Loops
-- Starts on first user interaction
-- Volume is `0.18`
-
-## Current Copy Direction
-
-- Tone: warm, precise, direct, lightly self-aware
-- Translate complex systems into concrete metaphors
-- Copy should move quickly
-- Smell facts are now written as kid-friendly sensory analogies rather than raw chemistry labels
-
-## Current Known State
-
-- `CLAUDE.md` and `Codex.md` contain outdated references to the removed navigable mode
-- `context.md` should be treated as the current source of truth for AI guidance
-- The current implementation has already removed the visible size-mode toggle
-- The moon system is intentionally hybridized for readability
-
-## Good Next Steps
-
-- Keep cleaning stale references to the old navigable mode from legacy docs
-- Tune moon overlay spacing if any system still feels too loose or too cramped
-- Add per-moon orbital plane data if more accurate inclination is desired beyond parent-tilt matching
-- Improve small-screen info-panel placement if needed
+- Follow `AGENTS.md` and `.savepoint/router.md` before beginning planned work.
+- Keep the AU position calculation as the single distance source of truth.
+- Preserve wheel, pointer-drag, and touch navigation.
+- Use native browser capabilities unless a dependency is explicitly justified.
+- Validate JavaScript with `node --check main.js` and repository hygiene with `git diff --check`.
