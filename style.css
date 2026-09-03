@@ -46,6 +46,22 @@ body.dragging #space {
   cursor: grabbing;
 }
 
+/* Transparent WebGL planet layer: above the 2D scene, below DOM UI,
+   and never a hit-testing target so input keeps hitting #space. */
+#planets-gl {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: block;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0;
+}
+
+#planets-gl.gl-active {
+  opacity: 1;
+}
+
 /* ===== SCANLINE OVERLAY ===== */
 #scanlines {
   position: fixed;
@@ -773,6 +789,13 @@ body.dragging #space {
   color: var(--text-dim);
   font-style: italic;
   margin-top: 8px;
+}
+
+#closing-credit {
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: var(--text-dim);
+  opacity: 0.6;
 }
 
 .closing-back {

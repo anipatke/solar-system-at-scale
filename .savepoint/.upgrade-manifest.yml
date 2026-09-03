@@ -1,0 +1,11 @@
+version: 1
+skills:
+    agent-skills/savepoint-audit-epic/SKILL.md: 8375bf26addd09a6175656ea714f776c376718a72c7c2782b01689bf5d8949e4
+    agent-skills/savepoint-audit-register/SKILL.md: 2f6ec7dd72e7b3eb351689c3c1d28b584ebe0ea2c9a9e551277c7b7c4551624f
+    agent-skills/savepoint-audit-task/SKILL.md: 348647734ae1b82b541ff783c785366a5d13d50c4c64d872e2ae208dd15ad02d
+    agent-skills/savepoint-build-task/SKILL.md: 9357480e22c48963fa3908e0035a30c87061abde75cc8d43cf7ec713718be43d
+    agent-skills/savepoint-create-defect/SKILL.md: 49c7659880090c604d09dd1e3e06c0b400dc92476f63d14b4d676fd3bc2098ce
+    agent-skills/savepoint-create-plan/SKILL.md: b978cdc9ea1150ff7ee534c85d0b46f7c39bf6b8a552bfe7091d99643fa17bab
+    agent-skills/savepoint-create-task/SKILL.md: 9e81e7e9b9849e77e6ccd37dc7beb3d4cea09212b79ae4a1fe028c3651f4e182
+    agent-skills/savepoint-draft-prd/SKILL.md: d2d445e17e0b543ab7e170e0fde130c5e075e7e2119fc5361d42eec5c850514e
+    agent-skills/savepoint-system-design/SKILL.md: 84b5accd2b087ad713a22a4dfe820d74c88486ec99b5864d3f130fecb76f4d1a

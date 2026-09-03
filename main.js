@@ -6,6 +6,8 @@
 
 'use strict';
 
+import { createPlanetRenderer } from './rendering/planet-renderer.js';
+
 // ── CONSTANTS ────────────────────────────────────────────────
 const AU_KM = 149_597_870.7;   // 1 AU in km
 const LIGHT_MINUTE_KM = 17_987_547.48;
@@ -389,10 +391,13 @@ let scrollIdleTimer = null;  // timer to detect scroll stop
 let isSnapping = false;      // currently auto-centering a planet
 let snappingTo  = null;      // which planet is being snapped to
 let snapZoom    = 0;         // 0→1 animated zoom when locked onto a planet
+let glRenderer  = null;      // WebGL planet-layer handle, or null if unavailable
+let glActive    = false;     // true only when the WebGL layer drew this frame successfully
 
 // ── ELEMENTS ─────────────────────────────────────────────────
 const canvas   = document.getElementById('space');
 const ctx      = canvas.getContext('2d');
+const glCanvas = document.getElementById('planets-gl');
 const intro    = document.getElementById('intro');
 const infoPanel = document.getElementById('info-panel');
 const infoPanelSecondary = document.getElementById('info-panel-secondary');
@@ -461,6 +466,7 @@ const closeNewHorizons = document.getElementById('close-new-horizons');
 
 // ── INIT ─────────────────────────────────────────────────────
 function init() {
+  initGlRenderer();
   resize();
   buildStars();
   buildRulerNotches();
@@ -472,10 +478,21 @@ function init() {
   requestAnimationFrame(loop);
 }
 
+// Setup failures (no WebGL, context creation error) leave glRenderer
+// null; the loop then never calls frame() and the 2D path stays active.
+function initGlRenderer() {
+  try {
+    glRenderer = createPlanetRenderer(glCanvas);
+  } catch (err) {
+    glRenderer = null;
+  }
+}
+
 function resize() {
   canvasW = canvas.width  = window.innerWidth;
   canvasH = canvas.height = window.innerHeight;
   totalScrollPx = TOTAL_AU * PIXELS_PER_AU;
+  if (glRenderer) glRenderer.resize(canvasW, canvasH);
 }
 
 function initRotations() {
@@ -883,17 +900,48 @@ function getVisualExtentRadius(planet, screenX = planetScreenX(planet)) {
 // We draw planets as slightly pixelated canvas shapes.
 // imageSmoothingEnabled=false + explicit pixel grid gives the retro feel.
 
-function drawPlanet(planet, dt) {
+// Advances a planet's spin state. Split out from drawing so the same
+// up-to-date rotation feeds both the WebGL frame view and the 2D
+// fallback path within the same animation frame.
+function updateRotation(planet, dt) {
+  const dir = planet.retrograde ? -1 : 1;
+  rotations[planet.id] += planet.rotationSpeed * dir * dt * 0.016;
+}
+
+// Builds the immutable per-frame view list the WebGL renderer draws
+// from. main.js stays the one source of truth for screen position,
+// display size, and rotation; the renderer never recomputes any of it.
+function buildVisibleBodyViews() {
+  const views = [];
+  PLANETS.forEach(planet => {
+    const x = planetScreenX(planet);
+    const y = planetScreenY();
+    const r = getRadius(planet);
+
+    // Off-screen culling (with margin for glow/rings) — bodies outside
+    // this margin are rejected before they ever reach the renderer.
+    if (x < -r * 4 || x > canvasW + r * 4) return;
+
+    views.push({
+      id: planet.id,
+      x,
+      y,
+      radius: getDisplayRadius(planet, x),
+      tiltRad: (planet.tiltDeg * Math.PI) / 180,
+      rotationRad: rotations[planet.id],
+      hasRings: !!planet.hasRings,
+    });
+  });
+  return views;
+}
+
+function drawPlanet(planet, glDrewThisFrame) {
   const x = planetScreenX(planet);
   const y = planetScreenY();
   const r = getRadius(planet);
 
   // Off-screen culling (with margin for glow/rings)
   if (x < -r * 4 || x > canvasW + r * 4) return;
-
-  // Advance rotation
-  const dir = planet.retrograde ? -1 : 1;
-  rotations[planet.id] += planet.rotationSpeed * dir * dt * 0.016;
 
   const displayR = getDisplayRadius(planet, x);
 
@@ -903,8 +951,10 @@ function drawPlanet(planet, dt) {
   ctx.save();
   ctx.translate(x, y);
 
-  // Draw rings BEHIND planet for Saturn
-  if (planet.hasRings) {
+  // The WebGL layer owns the planet body and rings once it has drawn a
+  // successful frame; the 2D path only supplies the ambient glow and
+  // label so failures never leave a gap between the two renderers.
+  if (!glDrewThisFrame && planet.hasRings) {
     drawSaturnRings(planet, displayR, tilt, false);
   }
 
@@ -918,25 +968,27 @@ function drawPlanet(planet, dt) {
   ctx.fillStyle = glow;
   ctx.fill();
 
-  // Planet body
-  ctx.save();
-  ctx.rotate(tilt);
+  if (!glDrewThisFrame) {
+    // Planet body
+    ctx.save();
+    ctx.rotate(tilt);
 
-  if (planet.id === 'sun') {
-    drawSun(planet, displayR, rot, dt);
-  } else if (planet.banded) {
-    drawBandedPlanet(planet, displayR, rot);
-  } else if (planet.id === 'earth') {
-    drawEarth(planet, displayR, rot);
-  } else {
-    drawSimplePlanet(planet, displayR, rot);
-  }
+    if (planet.id === 'sun') {
+      drawSun(planet, displayR, rot);
+    } else if (planet.banded) {
+      drawBandedPlanet(planet, displayR, rot);
+    } else if (planet.id === 'earth') {
+      drawEarth(planet, displayR, rot);
+    } else {
+      drawSimplePlanet(planet, displayR, rot);
+    }
 
-  ctx.restore();
+    ctx.restore();
 
-  // Rings in FRONT of planet (front half)
-  if (planet.hasRings) {
-    drawSaturnRings(planet, displayR, tilt, true);
+    // Rings in FRONT of planet (front half)
+    if (planet.hasRings) {
+      drawSaturnRings(planet, displayR, tilt, true);
+    }
   }
 
   // Planet label
@@ -945,7 +997,7 @@ function drawPlanet(planet, dt) {
   ctx.restore();
 }
 
-function drawSun(planet, r, rot, dt) {
+function drawSun(planet, r, rot) {
   // Radial gradient sun
   const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
   grad.addColorStop(0,   planet.colors.core);
@@ -1789,8 +1841,16 @@ function loop(ts) {
   // Asteroid belt (behind planets)
   drawBelt();
 
+  // Advance spin state once per planet, then let the WebGL layer attempt
+  // a frame from the current positions/rotations. WebGL only takes over
+  // visually on a successful draw; any setup, frame, or context failure
+  // leaves glActive false and the 2D path keeps drawing every body.
+  PLANETS.forEach(p => updateRotation(p, dt));
+  glActive = glRenderer ? glRenderer.frame(buildVisibleBodyViews()) : false;
+  glCanvas.classList.toggle('gl-active', glActive);
+
   // Draw planets
-  PLANETS.forEach(p => drawPlanet(p, dt));
+  PLANETS.forEach(p => drawPlanet(p, glActive));
 
   // Draw moons (on top of planets so they're visible against planet bodies)
   drawMoons(dt);

@@ -15,10 +15,11 @@ Read `.savepoint/PRD.md` only for vision changes. Read `.savepoint/Design.md` on
 ## Current state
 
 ```yaml
-state: epic-design
+state: task-building
 release: v1
 epic: E02-lightweight-3d-planets
-next_action: "Design E02's lightweight native WebGL planet system and resolve its open material-strategy decisions."
+task: E02-lightweight-3d-planets/T002-build-procedural-planet-materials
+next_action: Build E02-lightweight-3d-planets/T002-build-procedural-planet-materials.
 ```
 
 ## Skill Activation

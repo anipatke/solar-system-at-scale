@@ -26,4 +26,4 @@ No dense cinematic debris field, collision simulation, or scientifically literal
 
 ## Open decisions
 
-Set the mobile instance budget and decide whether named bodies receive labels or focus behavior.
+None. Mobile is capped at 80 instances; Ceres gets one orientation label without focus or card behavior.

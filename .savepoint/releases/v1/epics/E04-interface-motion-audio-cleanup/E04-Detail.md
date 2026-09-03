@@ -28,4 +28,4 @@ No new educational modes, narration, settings panel, or replacement soundtrack.
 
 ## Open decisions
 
-Choose the two canonical fact types and whether the Scale Lab is removed or retained behind an optional disclosure.
+None. Cards use `SIZE` and `HIGHLIGHT`; Scale Lab remains behind a collapsed-by-default `SCALE` disclosure.

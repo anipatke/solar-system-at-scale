@@ -113,6 +113,9 @@
   <!-- Main canvas -->
   <canvas id="space"></canvas>
 
+  <!-- Transparent WebGL planet layer. Above the 2D scene, below DOM UI. -->
+  <canvas id="planets-gl" aria-hidden="true"></canvas>
+
   <!-- Info panel -->
   <div id="info-panel" class="info-panel">
     <div class="info-inner">
@@ -206,6 +209,7 @@
         <span class="closing-val" id="close-new-horizons"></span>
       </div>
       <p class="closing-kicker">The universe does not care about your scroll wheel.</p>
+      <p id="closing-credit">Planet imagery: Solar System Scope (CC BY 4.0) · Pluto: NASA/JHUAPL/SwRI New Horizons (public domain)</p>
       <a class="closing-back" href="https://anipatke.com" target="_parent">← BACK TO VIBE LAB</a>
     </div>
   </div>
@@ -221,6 +225,6 @@
   <!-- Vercel Analytics -->
   <script defer src="/_vercel/insights/script.js"></script>
 
-  <script src="main.js"></script>
+  <script type="module" src="main.js"></script>
 </body>
 </html>
