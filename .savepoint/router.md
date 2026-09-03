@@ -15,11 +15,10 @@ Read `.savepoint/PRD.md` only for vision changes. Read `.savepoint/Design.md` on
 ## Current state
 
 ```yaml
-state: task-building
+state: epic-design
 release: v1
-epic: E01-project-documentation-reset
-task: T001-rightsize-project-documentation
-next_action: "Build T001, verify its documentation acceptance criteria, and stop for user review."
+epic: E02-lightweight-3d-planets
+next_action: "Design E02's lightweight native WebGL planet system and resolve its open material-strategy decisions."
 ```
 
 ## Skill Activation

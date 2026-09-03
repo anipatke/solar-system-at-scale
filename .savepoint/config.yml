@@ -1,6 +1,6 @@
 # Savepoint config — single source of truth for project preferences.
 
-verify_strict: false # vibe-coder soft mode; tasks reach done on assertion. Set true for TDD-strict.
+verify_strict: false # Soft verification mode; task completion remains a user-controlled decision.
 
 quality_gates:
   lint: null
