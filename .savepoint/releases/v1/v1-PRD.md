@@ -15,7 +15,7 @@ Turn the existing scale journey into a quiet, polished solar-system experience w
 | # | Epic | Status |
 |---|------|--------|
 | E01 | Project documentation reset | audited |
-| E02 | Lightweight 3D planet system | planned |
+| E02 | Lightweight 3D planet system | audit-waived |
 | E03 | Sparse 3D asteroid belt | planned |
 | E04 | Interface, motion, and audio cleanup | planned |
 

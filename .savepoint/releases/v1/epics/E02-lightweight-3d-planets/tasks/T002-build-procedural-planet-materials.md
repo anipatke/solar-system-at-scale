@@ -1,10 +1,9 @@
 ---
 id: E02-lightweight-3d-planets/T002-build-procedural-planet-materials
-status: in_progress
-stage: build
+status: done
 objective: Give every planet a recognisable material and complete Saturn's dimensional rings.
 depends_on:
-  - E02-lightweight-3d-planets/T001-establish-webgl-planet-layer
+    - E02-lightweight-3d-planets/T001-establish-webgl-planet-layer
 complexity_tier: high
 complexity_reason: Coordinates shaders, data recipes, lighting, and ten distinct visual identities.
 ---

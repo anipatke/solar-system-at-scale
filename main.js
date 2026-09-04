@@ -37,6 +37,12 @@ const SIZE_RATIO_TO_SUN = {
 // Minimum rendered radius in true-size mode so sub-pixel planets stay visible
 const TRUE_SIZE_MIN_RADIUS = 1.5;
 
+// A11Y-02: prefers-reduced-motion freezes decorative planet spin (both the
+// WebGL sphere texture rotation and the 2D fallback's rotation-driven detail
+// like the Sun's corona rays and Jupiter's Great Red Spot) without touching
+// camera travel, focus snapping, or information display.
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
 // ── PLANET DATA ──────────────────────────────────────────────
 const PLANETS = [
   {
@@ -904,6 +910,7 @@ function getVisualExtentRadius(planet, screenX = planetScreenX(planet)) {
 // up-to-date rotation feeds both the WebGL frame view and the 2D
 // fallback path within the same animation frame.
 function updateRotation(planet, dt) {
+  if (prefersReducedMotion.matches) return;
   const dir = planet.retrograde ? -1 : 1;
   rotations[planet.id] += planet.rotationSpeed * dir * dt * 0.016;
 }

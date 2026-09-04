@@ -17,9 +17,9 @@ Read `.savepoint/PRD.md` only for vision changes. Read `.savepoint/Design.md` on
 ```yaml
 state: task-building
 release: v1
-epic: E02-lightweight-3d-planets
-task: E02-lightweight-3d-planets/T002-build-procedural-planet-materials
-next_action: Build E02-lightweight-3d-planets/T002-build-procedural-planet-materials.
+epic: E03-sparse-3d-asteroid-belt
+task: E03-sparse-3d-asteroid-belt/T001-render-sparse-instanced-belt
+next_action: Build E03-sparse-3d-asteroid-belt/T001-render-sparse-instanced-belt.
 ```
 
 ## Skill Activation

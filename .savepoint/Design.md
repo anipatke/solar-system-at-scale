@@ -19,13 +19,16 @@ last_audited: never
 
 ```text
 .
-├── index.html          Page shell, semantic overlays, fonts, and analytics script
-├── style.css           Design tokens, layout, controls, responsive rules
-├── main.js             Body data, camera/input state, rendering, HUD, and panels
-├── audio/ambient.mp3   Current ambient track; scheduled for removal in v1
-├── vercel.json         Static rewrites and response headers
-├── context.md          Compact implementation context for coding agents
-└── .savepoint/         Product, design, release, task, policy, and audit records
+├── index.html                    Page shell, semantic overlays, fonts, and analytics script
+├── style.css                     Design tokens, layout, controls, responsive rules
+├── main.js                       Body data, camera/input state, rendering, HUD, and panels
+├── rendering/planet-renderer.js  WebGL setup, shared sphere/ring geometry, resize/DPR, context recovery, frame API
+├── rendering/planet-materials.js Body-specific WebGL material data (texture paths, ring data, emissive flag)
+├── assets/textures/              Pre-processed equirectangular planet/ring textures + PROVENANCE.md
+├── audio/ambient.mp3             Current ambient track; scheduled for removal in v1
+├── vercel.json                   Static rewrites and response headers
+├── context.md                    Compact implementation context for coding agents
+└── .savepoint/                   Product, design, release, task, policy, and audit records
 ```
 
 `Codex.md` and `CLAUDE.md` are vendor-specific pointers to `AGENTS.md` and `context.md`; they must not duplicate implementation guidance. `package.json` currently records Vercel Analytics metadata but does not introduce a bundling workflow.
@@ -50,7 +53,7 @@ last_audited: never
 | Layer | Current owner | V1 direction |
 |---|---|---|
 | Space, stars, orbit guides, labels | 2D canvas | Retain |
-| Planets and Saturn rings | 2D canvas drawing functions | Transparent native WebGL layer with shared sphere geometry |
+| Planets and Saturn rings | Transparent native WebGL layer (`rendering/planet-renderer.js`) with shared sphere/ring geometry and real texture materials; 2D canvas drawing functions remain the fallback | Retain |
 | Asteroid belt | 2D haze and particles | Sparse instanced WebGL rocks with a restrained 2D depth field if needed |
 | Moons | 2D local overlays | Retain unless the shared sphere path is demonstrably cheaper and clearer |
 | HUD and cards | DOM/CSS | Retain and simplify |
@@ -80,4 +83,4 @@ Body data owns names, symbols, types, distances, rotation metadata, colours/mate
 
 ## Planned module changes
 
-The v1 epics may introduce small focused JavaScript modules or static texture assets if E02 design shows that keeping all WebGL code in `main.js` would harm maintainability. Any new file must be added to this map through the epic drift/audit process.
+E02 introduced `rendering/planet-renderer.js`, `rendering/planet-materials.js`, and `assets/textures/` as documented above. Future v1 epics may introduce further small focused modules if a similar split proves warranted; any new file must be added to this map through the epic drift/audit process.

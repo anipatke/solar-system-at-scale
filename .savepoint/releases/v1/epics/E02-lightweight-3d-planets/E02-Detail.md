@@ -1,7 +1,9 @@
 ---
 type: epic-design
-status: planned
+status: audit-waived
 ---
+
+> **Audit waived.** All three tasks (T001, T002, T003) reached `status: done`; the owner explicitly waived the `savepoint-audit-epic` fresh-session audit for this epic on 2026-09-04 and moved the release directly to E03. No `E02-Audit.md` was produced.
 
 # E02: Lightweight 3D Planet System
 
