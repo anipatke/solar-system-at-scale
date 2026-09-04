@@ -7,6 +7,7 @@
 'use strict';
 
 import { createPlanetRenderer } from './rendering/planet-renderer.js';
+import { createAsteroidBeltRenderer } from './rendering/asteroid-belt-renderer.js';
 
 // ── CONSTANTS ────────────────────────────────────────────────
 const AU_KM = 149_597_870.7;   // 1 AU in km
@@ -399,11 +400,15 @@ let snappingTo  = null;      // which planet is being snapped to
 let snapZoom    = 0;         // 0→1 animated zoom when locked onto a planet
 let glRenderer  = null;      // WebGL planet-layer handle, or null if unavailable
 let glActive    = false;     // true only when the WebGL layer drew this frame successfully
+let beltGlRenderer = null;   // WebGL asteroid-belt-layer handle, or null if unavailable
+let beltGlActive   = false;  // true only when the belt WebGL layer drew this frame successfully
+let beltTimeSec    = 0;      // reduced-motion-aware clock driving rock spin
 
 // ── ELEMENTS ─────────────────────────────────────────────────
 const canvas   = document.getElementById('space');
 const ctx      = canvas.getContext('2d');
 const glCanvas = document.getElementById('planets-gl');
+const beltGlCanvas = document.getElementById('belt-gl');
 const intro    = document.getElementById('intro');
 const infoPanel = document.getElementById('info-panel');
 const infoPanelSecondary = document.getElementById('info-panel-secondary');
@@ -473,6 +478,8 @@ const closeNewHorizons = document.getElementById('close-new-horizons');
 // ── INIT ─────────────────────────────────────────────────────
 function init() {
   initGlRenderer();
+  initBeltGlRenderer();
+  buildAsteroidCatalog();
   resize();
   buildStars();
   buildRulerNotches();
@@ -494,11 +501,27 @@ function initGlRenderer() {
   }
 }
 
+// Same fallback contract as initGlRenderer(): setup/instancing-support
+// failures leave beltGlRenderer null so the loop never calls frame()
+// and the 2D haze/dots stay active (ARCH-02).
+function initBeltGlRenderer() {
+  try {
+    beltGlRenderer = createAsteroidBeltRenderer(beltGlCanvas);
+  } catch (err) {
+    beltGlRenderer = null;
+  }
+}
+
 function resize() {
   canvasW = canvas.width  = window.innerWidth;
   canvasH = canvas.height = window.innerHeight;
   totalScrollPx = TOTAL_AU * PIXELS_PER_AU;
   if (glRenderer) glRenderer.resize(canvasW, canvasH);
+  if (beltGlRenderer) {
+    beltGlRenderer.resize(canvasW, canvasH);
+    const budget = canvasW <= BELT_MOBILE_WIDTH_PX ? BELT_MOBILE_MAX_INSTANCES : BELT_MAX_INSTANCES;
+    beltGlRenderer.setInstances(computeBeltGlInstances(budget));
+  }
 }
 
 function initRotations() {
@@ -527,6 +550,77 @@ function buildBelt() {
       depth,
     });
   }
+}
+
+// ── ASTEROID BELT WEBGL INSTANCES ───────────────────────────
+// Sparse, deterministic replacement for the dense 2D haze/dots above.
+// The WebGL layer draws these rocks; buildBelt()'s particles above
+// remain the fallback for when WebGL is unavailable (ARCH-02).
+const BELT_MAX_INSTANCES = 180;
+const BELT_MOBILE_MAX_INSTANCES = 80;
+const BELT_MOBILE_WIDTH_PX = 600;
+const BELT_VARIANT_COUNT = 4;
+const BELT_SEED = 0x5EED0A57;
+const BELT_ROCK_MIN_PX = 3;
+const BELT_ROCK_MAX_PX = 13;
+const BELT_SPIN_SPEED_RANGE = 0.6; // rad/s, subtle and non-synchronized
+
+// Small seeded generator (mirrors the copy in
+// rendering/asteroid-belt-renderer.js) so rock placement is stable
+// across reloads/resizes instead of reseeding from Math.random().
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function random() {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+let asteroidCatalog = []; // deterministic seeded rock placements, built once in init()
+
+function buildAsteroidCatalog() {
+  const rand = mulberry32(BELT_SEED);
+  asteroidCatalog = [];
+  for (let i = 0; i < BELT_MAX_INSTANCES; i++) {
+    // Average of two uniforms tapers density toward both belt edges —
+    // a gradual entry/exit instead of a hard-edged band (AC5).
+    const tAU = (rand() + rand()) / 2;
+    asteroidCatalog.push({
+      tAU,
+      yFrac: (rand() - 0.5) * 2,
+      depth: rand(),
+      sizeT: rand(),
+      variant: Math.floor(rand() * BELT_VARIANT_COUNT),
+      baseRotation: rand() * Math.PI * 2,
+      spinSpeed: (rand() - 0.5) * BELT_SPIN_SPEED_RANGE,
+      shade: 0.7 + rand() * 0.3,
+    });
+  }
+}
+
+// Maps the deterministic catalog into the world-space instance format
+// rendering/asteroid-belt-renderer.js expects. Only the leading
+// `budgetCount` entries are used, so the mobile-budget subset is
+// always the same stable prefix of the desktop set (AC3, AC4).
+function computeBeltGlInstances(budgetCount) {
+  const centerY = canvasH * 0.5;
+  const maxSpread = canvasH * 0.12;
+  return asteroidCatalog.slice(0, budgetCount).map(a => {
+    const au = BELT_INNER_AU + a.tAU * (BELT_OUTER_AU - BELT_INNER_AU);
+    const depthScale = 0.55 + (1 - a.depth) * 0.65;
+    return {
+      x: au * PIXELS_PER_AU,
+      y: centerY + a.yFrac * maxSpread * depthScale,
+      depth: a.depth,
+      scale: (BELT_ROCK_MIN_PX + a.sizeT * (BELT_ROCK_MAX_PX - BELT_ROCK_MIN_PX)) * depthScale,
+      baseRotation: a.baseRotation,
+      spinSpeed: a.spinSpeed,
+      shade: a.shade,
+      variant: a.variant,
+    };
+  });
 }
 
 // ── STARS ────────────────────────────────────────────────────
@@ -1845,8 +1939,14 @@ function loop(ts) {
   // Draw stars
   drawStars(dt);
 
-  // Asteroid belt (behind planets)
-  drawBelt();
+  // Asteroid belt (behind planets, both by AU range and by z-index:
+  // #belt-gl sits below #planets-gl). Same success-gates-fallback
+  // pattern as the planet layer below: WebGL only replaces the 2D
+  // haze/dots once it has drawn a successful frame.
+  if (!prefersReducedMotion.matches) beltTimeSec += dt / 1000;
+  beltGlActive = beltGlRenderer ? beltGlRenderer.frame({ cameraX, timeSec: beltTimeSec }) : false;
+  beltGlCanvas.classList.toggle('gl-active', beltGlActive);
+  if (!beltGlActive) drawBelt();
 
   // Advance spin state once per planet, then let the WebGL layer attempt
   // a frame from the current positions/rotations. WebGL only takes over
