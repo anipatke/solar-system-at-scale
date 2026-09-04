@@ -44,7 +44,7 @@ Use this file for compact implementation facts. Product intent lives in `.savepo
 
 - Stars, asteroid particles, planets, rings, moons, probes, and labels are drawn in the 2D canvas loop.
 - Planets use gradients and clipped procedural shapes; Jupiter uses rectangular cloud bands and a moving Great Red Spot.
-- The asteroid belt is a generated haze plus circular particles across 2.2–3.2 AU.
+- The asteroid belt is a sparse, deterministic seeded field of instanced WebGL rocks (`rendering/asteroid-belt-renderer.js`) across 2.2–3.2 AU, capped at 180 instances desktop / 80 at ≤600px width, with a 2D canvas fallback drawing the same catalog as sparse dots when WebGL is unavailable. A non-focusable Ceres label offers restrained orientation with no card or navigation mode.
 - Off-screen bodies are culled and camera movement is eased.
 
 ## Approved v1 direction

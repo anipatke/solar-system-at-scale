@@ -24,6 +24,7 @@ last_audited: never
 ├── main.js                       Body data, camera/input state, rendering, HUD, and panels
 ├── rendering/planet-renderer.js  WebGL setup, shared sphere/ring geometry, resize/DPR, context recovery, frame API
 ├── rendering/planet-materials.js Body-specific WebGL material data (texture paths, ring data, emissive flag)
+├── rendering/asteroid-belt-renderer.js WebGL setup, shared rock geometry, instanced draw buffers, resize/DPR, context recovery, frame API
 ├── assets/textures/              Pre-processed equirectangular planet/ring textures + PROVENANCE.md
 ├── audio/ambient.mp3             Current ambient track; scheduled for removal in v1
 ├── vercel.json                   Static rewrites and response headers
@@ -35,7 +36,7 @@ last_audited: never
 
 ## Runtime flow
 
-1. `init()` sizes the canvas and builds deterministic session data such as stars, ruler notches, rotations, moons, and belt particles.
+1. `init()` sizes the canvas and builds deterministic session data such as stars, ruler notches, rotations, moons, and the seeded asteroid catalog.
 2. Wheel, touch, and mouse input update a target camera position on the horizontal AU axis.
 3. The animation loop eases the camera, draws the visible scene, updates focus state, and synchronises DOM overlays.
 4. After input settles, the nearest eligible target snaps into focus and receives a temporary readable-size treatment.
@@ -54,7 +55,7 @@ last_audited: never
 |---|---|---|
 | Space, stars, orbit guides, labels | 2D canvas | Retain |
 | Planets and Saturn rings | Transparent native WebGL layer (`rendering/planet-renderer.js`) with shared sphere/ring geometry and real texture materials; 2D canvas drawing functions remain the fallback | Retain |
-| Asteroid belt | 2D haze and particles | Sparse instanced WebGL rocks with a restrained 2D depth field if needed |
+| Asteroid belt | Sparse instanced WebGL rock layer (`rendering/asteroid-belt-renderer.js`) drawing a deterministic seeded catalog, capped at 180 instances desktop / 80 at ≤600px width; the 2D canvas draws the same catalog as sparse dots when WebGL is unavailable. A non-focusable Ceres label provides restrained orientation with no card or navigation mode | Retain |
 | Moons | 2D local overlays | Retain unless the shared sphere path is demonstrably cheaper and clearer |
 | HUD and cards | DOM/CSS | Retain and simplify |
 

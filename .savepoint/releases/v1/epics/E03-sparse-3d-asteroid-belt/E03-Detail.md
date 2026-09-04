@@ -1,6 +1,6 @@
 ---
 type: epic-design
-status: planned
+status: audited
 ---
 
 # E03: Sparse 3D Asteroid Belt

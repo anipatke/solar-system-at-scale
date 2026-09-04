@@ -60,11 +60,10 @@ Health Check: Quick
 - Acceptance evidence: see checked boxes above; every planet verified live in a real WebGL context (Chromium + SwiftShader) at both viewports, not just read-through.
 - File reality evidence: all edited files match this task's Context Files list plus the new `assets/textures/` directory (documented in `E02-Detail.md`'s Components/files table); no untracked reads.
 - Tests/commands: `node --check main.js` → pass. `node --check` on both `rendering/*.js` → pass. `git diff --check` → pass, no whitespace errors.
-- Browser scenarios (Playwright + Chromium headless, `--use-gl=swiftshader`):
-  - Normal path, 1440×900: scrolled to a centered snap-lock on every body (Sun, Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto) — each shows `#planets-gl.gl-active`, real photographic-style material with lambertian shading; Jupiter shows real bands + Great Red Spot, Saturn shows a real layered/dimensional ring (front-of-body and behind-body halves both correct), Earth shows real ocean/continent/cloud detail, ice giants and rocky bodies are each clearly distinguishable by their own real texture; zero uncaught console errors (only the expected local-dev 404 for `/_vercel/insights/script.js`, unrelated to this task).
-  - Same scenario repeated at 360×800 (mobile) — same correctness, confirmed for Jupiter/Saturn directly.
-  - Forced WebGL unavailable (`getContext` stubbed to return `null` for `webgl`/`experimental-webgl`): `gl-active` never sets, 2D fallback renders and remains navigable, zero uncaught errors.
-  - Context loss/restore mid-session: `WEBGL_lose_context.loseContext()` → `gl-active` drops immediately; `restoreContext()` → textures/programs rebuilt, `gl-active` returns to `true` only after the next successful, fully-textured `frame()`; ruler navigation continued working throughout and after.
-  - Texture-load gating: verified `frame()` returns `false` (2D stays active) until every visible body's texture has decoded, so WebGL never shows a flat-black or half-loaded planet.
+- Browser scenario(s) (Playwright + Chromium headless, `--use-gl=swiftshader`)
+- Desktop 1440×900: all bodies reach a centered snap-lock with the correct textured material.
+- Mobile 360×800: the same material checks hold for the representative bodies.
+- WebGL-unavailable and load gating: forced `getContext(null)` keeps the 2D fallback navigable, and `frame()` stays false until all visible textures decode.
+- Context loss/restore: `WEBGL_lose_context` drops WebGL immediately and restoration succeeds only after the next fully-textured frame.
 - Known debt: none carried forward from T001 remains for materials; reduced-motion → WebGL spin wiring is still explicitly T003's item (unchanged from T001).
 - Waivers: none.

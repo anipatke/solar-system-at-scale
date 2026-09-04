@@ -60,10 +60,9 @@ Health Check: Quick
 - Acceptance evidence: see checked boxes above; each verified live in a real WebGL context (Chromium + SwiftShader), not just read-through.
 - File reality evidence: all edited files match this task's Context Files list; no untracked reads.
 - Tests/commands: `node --check main.js` → pass. `node --check` (module syntax) on both `rendering/*.js` → pass. `git diff --check` → pass, no whitespace errors.
-- Browser scenarios (Playwright + Chromium headless, `--use-gl=swiftshader`, viewport 1440×900 unless noted):
-  - Normal path: scrolled to Jupiter and Saturn focus — WebGL sphere renders with real lambertian shading (visible terminator) and Saturn's ring mesh correctly occludes behind/in front of the body; `#planets-gl.gl-active` set; zero uncaught console errors.
-  - Forced WebGL unavailable (`getContext` stubbed to return `null` for `webgl`/`experimental-webgl` before load): `gl-active` never sets, 2D fallback (banded Jupiter incl. Great Red Spot) renders normally, ruler/focus/info-card all track correctly, zero uncaught errors.
-  - Context loss/restore: `WEBGL_lose_context.loseContext()` mid-session → `gl-active` drops immediately (2D fallback resumes that frame), zero uncaught errors; `restoreContext()` → resources rebuilt, `gl-active` returns to `true` only after the next successful `frame()`; navigation (`ruler-focus` continues updating) unaffected throughout.
-  - Mobile: 360×800, `isMobile`/`hasTouch` — page loads, WebGL layer initializes and activates, zero uncaught errors.
-- Known debt: sphere/ring materials are flat single-color placeholders (T002 replaces with procedural recipes); ring is one shared band rather than the layered look T002 delivers; reduced-motion is not yet wired to WebGL spin (explicitly T003's Implementation Plan item).
+- Browser scenario(s) (Playwright + Chromium headless, `--use-gl=swiftshader`)
+- Desktop 1440×900: Jupiter/Saturn render through WebGL with shading and ring occlusion, and `#planets-gl.gl-active` stays set.
+- WebGL-unavailable and restore boundary: a forced `getContext(null)` keeps the 2D fallback active, and `WEBGL_lose_context`/restore returns WebGL only after a successful frame.
+- Mobile 360×800: page loads and WebGL activates cleanly.
+- Known debt: sphere/ring materials are flat single-color placeholders; reduced-motion is not yet wired to WebGL spin.
 - Waivers: none.

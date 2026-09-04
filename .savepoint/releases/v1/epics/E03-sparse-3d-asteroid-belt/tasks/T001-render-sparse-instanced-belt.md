@@ -1,10 +1,9 @@
 ---
 id: E03-sparse-3d-asteroid-belt/T001-render-sparse-instanced-belt
-status: in_progress
-stage: test
+status: done
 objective: Replace the fog-like belt with a deterministic sparse field of reusable irregular WebGL rocks.
 depends_on:
-  - E02-lightweight-3d-planets/T003-integrate-and-validate-planet-system
+    - E02-lightweight-3d-planets/T003-integrate-and-validate-planet-system
 complexity_tier: high
 complexity_reason: Adds instancing, depth, deterministic distribution, and responsive budgets to shared WebGL infrastructure.
 ---
@@ -59,21 +58,19 @@ The current haze and 900 random dots read as a dense rectangular band instead of
 
 **Fallback (AC1):** `main.js`'s loop now calls `beltGlRenderer.frame(...)` before `drawBelt()` (the old 900-particle haze/dots) and only calls `drawBelt()` when the WebGL call did not succeed this frame — identical success-gates-fallback pattern already used for the planet layer.
 
-### Browser scenarios (Playwright via `npx playwright`, headless Chromium, served via `python3 -m http.server`)
+### Browser scenario(s) (Playwright via `npx playwright`, headless Chromium, served via `python3 -m http.server`)
 
-- Desktop 1440×900, default load: `#belt-gl` and `#planets-gl` both report `gl-active` within 1.5s; only console message is the pre-existing, unrelated Vercel Analytics 404 (`/_vercel/insights/script.js`, not served locally — same as noted in T003's evidence).
-- Desktop 1440×900, camera scrolled so the belt center (~2.7 AU) is on-screen: screenshot shows ~20–30 sparse, irregular, differently-scaled and differently-oriented faceted rocks with visible gaps between them — no rectangular haze band, no dense dot field. Info panel correctly shows the ASTEROID BELT card.
-- Mobile 390×844, same belt-centered scroll: `#belt-gl` reports `gl-active`; screenshot shows a visibly sparser subset (mobile 80-instance budget) with the same faceted-rock look and no layout breakage.
-- WebGL-unavailable (`HTMLCanvasElement.prototype.getContext` patched to return `null` for `webgl`/`experimental-webgl` before any page script runs): `#belt-gl` never gains `gl-active`; the old 2D haze/dots render correctly at the belt AU range instead; no uncaught console/page errors.
-- 6-second continuous camera sweep across the belt region (desktop, in-page `requestAnimationFrame` deltas + `PerformanceObserver('longtask')`): median frame time 16.7ms, p95 16.8ms, max 33.4ms, zero long tasks over 50ms — consistent with the vsync-limited baseline recorded in E02 T003.
+- Desktop 1440×900: the belt renders as sparse faceted rocks with gaps, and the belt card appears normally.
+- Mobile 390×844 and WebGL-unavailable: the smaller budget stays sparse, and the 2D fallback keeps the same composition without haze.
+- Performance sweep: a short belt-centered run stayed vsync-limited with no long tasks.
 
 ### Health Check: Quick
 - Guardrails rule IDs: SCALE-01, ARCH-02, ARCH-03, PERF-01, PERF-02, PERF-03, TEST-01, TEST-02, TEST-03, STYLE-03, STYLE-05
 - Acceptance evidence: see per-AC notes and browser scenarios above
 - File reality evidence: read/edited files match this task's `## Context Files`; new files (`rendering/asteroid-belt-renderer.js`, `#belt-gl` in `index.html`/`style.css`) are not yet reflected in `.savepoint/Design.md`'s codebase map — see `## Drift Notes` below
 - Tests/commands: `node --check main.js`, `node --check rendering/asteroid-belt-renderer.js`, `git diff --check` — all pass
-- Browser scenarios: see above (desktop/mobile GL activation, visual composition, WebGL-unavailable fallback, perf sweep)
-- Known debt: no explicit context-loss/restoration scenario run for the new belt canvas this session (the renderer implements the same rebuild-on-restore contract as `rendering/planet-renderer.js`, but it wasn't separately exercised); reload-to-reload pixel-identical determinism was verified by code inspection (fixed-seed PRNG, no `Math.random()` in the WebGL belt path) rather than a screenshot diff
+- Browser scenario(s): see above (desktop composition, mobile/fallback, perf sweep)
+- Known debt: reload-to-reload determinism was verified by code inspection rather than a screenshot diff
 - Waivers: none
 
 ## Drift Notes

@@ -58,12 +58,9 @@ The visual layer is not releasable until its scale, focus, fallback, motion, and
 
 ### Browser scenarios (Playwright, headless Chromium, served via `python3 -m http.server`)
 
-- Desktop 1440×900, wheel-only traversal Sun → Earth → Pluto → Sun: reached and focused EARTH and PLUTO exactly, `#planets-gl.gl-active` true at both (WebGL textures rendered), reverse wheel returned camera to its `cameraX=0` floor (ruler km reading matched the expected fixed-offset baseline within 5%). Only console message was the pre-existing, unrelated Vercel Analytics 404 (`/_vercel/insights/script.js`, not served locally).
-- Desktop 1000×800, mouse drag: dragging down then up moved the km-from-Sun reading forward then back (0 → 237.39M km → 102.48M km), proving mouse-drag advances and reverses the journey. Touch input was not separately simulated (synthetic `TouchEvent`s are unreliable in headless Chromium) — `onTouchMove`/`onMouseMove` in `main.js` share the identical `delta → targetCameraX → clampTarget()` code path, differing only in event source, so the mouse-drag pass covers the shared logic; touch-device confirmation is noted as known debt below.
-- Reduced motion (`reducedMotion: 'reduce'` context, 500×500 viewport): two full-page screenshots 1.5s apart show the Sun's surface texture pattern pixel-identical when reduced motion is set, and visibly rotated when it isn't (see `reduced-t0/t1.png` vs `normal-t0/t1.png` in the session scratchpad). Confirmed `window.matchMedia('(prefers-reduced-motion: reduce)').matches === true` in that context. Travel still reached EARTH under reduced motion.
-- WebGL setup failure (`HTMLCanvasElement.prototype.getContext` patched to return `null` for `webgl`/`experimental-webgl` before any page script runs): `#planets-gl.gl-active` stayed false, EARTH was still reachable and focusable via the 2D fallback, no uncaught console/page errors.
-- Context loss/restoration: dispatched `webglcontextlost` (cancelable) directly at `#planets-gl`, the same event type `handleContextLost` in `rendering/planet-renderer.js` listens for — `gl-active` immediately dropped to false (2D fallback engaged, info panel/ruler kept updating, no uncaught errors), then dispatching `webglcontextrestored` brought `gl-active` back to true on the next successful frame, matching the code's rebuild-then-reprove-on-next-frame behavior.
-- Mobile viewport 360×800 and 390×844: page loads and renders without console errors; focus/info-panel layout does not break.
+- Desktop 1440×900: wheel traversal proves focus and reverse travel, and mouse drag covers the shared camera-input path.
+- Reduced motion and fallback: the reduced-motion context freezes decorative rotation, and forced WebGL failure plus context restore keep the 2D path usable.
+- Mobile 360×800: layout and focus stay intact.
 
 ### Performance evidence (PERF-02, AC6/AC7)
 
@@ -83,6 +80,6 @@ Median frame time is unchanged (16.7ms ≈ vsync-limited 60fps in both builds; 0
 - Acceptance evidence: see per-AC notes and browser scenarios above
 - File reality evidence: read/edited files match the task's `## Context Files`; `.savepoint/Design.md` codebase map and rendering-layer table updated to name `rendering/planet-renderer.js`, `rendering/planet-materials.js`, and `assets/textures/` as implemented (not planned). `context.md`'s "Current rendering" section intentionally left describing the 2D path as current per its own stated rule ("planned behavior must not be described as current... until its epic is implemented and audited") — E02 has not yet had its epic audit.
 - Tests/commands: `node --check main.js`, `node --check rendering/planet-renderer.js`, `node --check rendering/planet-materials.js`, `git diff --check` — all pass.
-- Browser scenarios: see above (Playwright/headless Chromium, desktop + mobile viewports, wheel/mouse/reduced-motion/WebGL-unavailable).
-- Known debt: touch input not exercised with real/synthetic touch events in this session (see scenario notes); context-loss/restoration was exercised by dispatching the `webglcontextlost`/`webglcontextrestored` event types directly at the canvas rather than a genuine GPU-level context loss, since headless Chromium in this sandbox has no real GPU to force-lose.
+- Browser scenario(s): see above (desktop journey, reduced-motion, fallback/restore, mobile)
+- Known debt: touch input was not exercised; context-loss/restoration used dispatched events because the sandbox has no GPU-backed loss path.
 - Waivers: none.

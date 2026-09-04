@@ -324,6 +324,15 @@ const ASTEROID_BELT = {
   },
 };
 
+// A single named landmark for restrained orientation inside the belt.
+// Deliberately not part of PLANETS/PROBES: it must never gain a focus
+// snap, info card, or navigation mode (E03 T002 AC1), only a label.
+const CERES = {
+  id: 'ceres',
+  name: 'CERES',
+  distanceAU: 2.77,
+};
+
 const PROBES = [
   {
     id: 'parker',
@@ -384,7 +393,6 @@ let canvasH = 0;
 let stars = [];
 let rotations   = {};      // { planetId: angle }
 let moonAngles  = {};      // { moonId: angle }
-let beltParticles = [];    // asteroid belt dots
 let activePlanet = null;   // currently shown in info panel
 let activeProbes = [];
 let displayMode = 'planets';
@@ -485,7 +493,6 @@ function init() {
   buildRulerNotches();
   initRotations();
   initMoonAngles();
-  buildBelt();
   syncScaleLabCollapse();
   populateClosingCard();
   requestAnimationFrame(loop);
@@ -519,8 +526,7 @@ function resize() {
   if (glRenderer) glRenderer.resize(canvasW, canvasH);
   if (beltGlRenderer) {
     beltGlRenderer.resize(canvasW, canvasH);
-    const budget = canvasW <= BELT_MOBILE_WIDTH_PX ? BELT_MOBILE_MAX_INSTANCES : BELT_MAX_INSTANCES;
-    beltGlRenderer.setInstances(computeBeltGlInstances(budget));
+    beltGlRenderer.setInstances(computeBeltGlInstances(getBeltInstanceBudget()));
   }
 }
 
@@ -532,30 +538,10 @@ function initMoonAngles() {
   MOONS.forEach(m => { moonAngles[m.id] = Math.random() * Math.PI * 2; });
 }
 
-function buildBelt() {
-  beltParticles = [];
-  for (let i = 0; i < 900; i++) {
-    // Bias samples toward denser inner clusters so the belt reads as a region.
-    const t = Math.pow(Math.random(), 1.55);
-    const depth = Math.random();
-    const cluster = Math.random();
-    const sizeBase = Math.random();
-    const isChunk = cluster > 0.92;
-    const au = BELT_INNER_AU + t * (BELT_OUTER_AU - BELT_INNER_AU);
-    beltParticles.push({
-      worldX:   au * PIXELS_PER_AU,
-      yFrac:    (Math.random() - 0.5) * (isChunk ? 1.2 : 1.8),
-      size:     isChunk ? 1.4 + sizeBase * 2.2 : 0.35 + sizeBase * 1.35,
-      opacity:  isChunk ? 0.45 + Math.random() * 0.3 : 0.08 + Math.random() * 0.32,
-      depth,
-    });
-  }
-}
-
-// ── ASTEROID BELT WEBGL INSTANCES ───────────────────────────
-// Sparse, deterministic replacement for the dense 2D haze/dots above.
-// The WebGL layer draws these rocks; buildBelt()'s particles above
-// remain the fallback for when WebGL is unavailable (ARCH-02).
+// ── ASTEROID BELT INSTANCES ─────────────────────────────────
+// One deterministic seeded catalog backs both the WebGL rock layer and
+// the 2D fallback below, so a WebGL failure swaps renderers without
+// changing which rocks exist or where they sit (ARCH-02, ARCH-03).
 const BELT_MAX_INSTANCES = 180;
 const BELT_MOBILE_MAX_INSTANCES = 80;
 const BELT_MOBILE_WIDTH_PX = 600;
@@ -564,6 +550,7 @@ const BELT_SEED = 0x5EED0A57;
 const BELT_ROCK_MIN_PX = 3;
 const BELT_ROCK_MAX_PX = 13;
 const BELT_SPIN_SPEED_RANGE = 0.6; // rad/s, subtle and non-synchronized
+const BELT_SPREAD_FRAC = 0.12; // vertical belt spread as a fraction of canvas height
 
 // Small seeded generator (mirrors the copy in
 // rendering/asteroid-belt-renderer.js) so rock placement is stable
@@ -600,16 +587,31 @@ function buildAsteroidCatalog() {
   }
 }
 
+// Responsive instance budget shared by the WebGL layer's setInstances()
+// and the 2D fallback below, so both paths draw the same stable prefix
+// of asteroidCatalog at a given viewport width (AC3, AC4).
+function getBeltInstanceBudget() {
+  return canvasW <= BELT_MOBILE_WIDTH_PX ? BELT_MOBILE_MAX_INSTANCES : BELT_MAX_INSTANCES;
+}
+
+function beltInstanceAU(a) {
+  return BELT_INNER_AU + a.tAU * (BELT_OUTER_AU - BELT_INNER_AU);
+}
+
+function beltInstanceDepthScale(a) {
+  return 0.55 + (1 - a.depth) * 0.65;
+}
+
 // Maps the deterministic catalog into the world-space instance format
 // rendering/asteroid-belt-renderer.js expects. Only the leading
 // `budgetCount` entries are used, so the mobile-budget subset is
 // always the same stable prefix of the desktop set (AC3, AC4).
 function computeBeltGlInstances(budgetCount) {
   const centerY = canvasH * 0.5;
-  const maxSpread = canvasH * 0.12;
+  const maxSpread = canvasH * BELT_SPREAD_FRAC;
   return asteroidCatalog.slice(0, budgetCount).map(a => {
-    const au = BELT_INNER_AU + a.tAU * (BELT_OUTER_AU - BELT_INNER_AU);
-    const depthScale = 0.55 + (1 - a.depth) * 0.65;
+    const au = beltInstanceAU(a);
+    const depthScale = beltInstanceDepthScale(a);
     return {
       x: au * PIXELS_PER_AU,
       y: centerY + a.yFrac * maxSpread * depthScale,
@@ -656,57 +658,55 @@ function drawStars(dt) {
   });
 }
 
+// 2D fallback for when WebGL is unavailable (ARCH-02). Draws the same
+// deterministic asteroidCatalog prefix the WebGL layer would have used
+// at this viewport width, as flat sparse dots — no haze band, no dense
+// wall, so the sparse character holds in either rendering path (AC2).
 function drawBelt() {
-  const maxSpread = canvasH * 0.12;
   const centerY = canvasH / 2;
-  const innerX = BELT_INNER_AU * PIXELS_PER_AU - cameraX + canvasW * 0.2;
-  const outerX = BELT_OUTER_AU * PIXELS_PER_AU - cameraX + canvasW * 0.2;
-  const bandLeft = Math.max(-canvasW * 0.2, innerX);
-  const bandRight = Math.min(canvasW * 1.2, outerX);
-  const bandWidth = bandRight - bandLeft;
+  const maxSpread = canvasH * BELT_SPREAD_FRAC;
+  const budget = getBeltInstanceBudget();
 
-  if (bandWidth > 0) {
-    const haze = ctx.createLinearGradient(0, centerY - maxSpread, 0, centerY + maxSpread);
-    haze.addColorStop(0, 'rgba(0,0,0,0)');
-    haze.addColorStop(0.2, 'rgba(120,106,84,0.04)');
-    haze.addColorStop(0.5, 'rgba(160,145,115,0.12)');
-    haze.addColorStop(0.8, 'rgba(120,106,84,0.04)');
-    haze.addColorStop(1, 'rgba(0,0,0,0)');
-
-    ctx.fillStyle = haze;
-    ctx.fillRect(bandLeft, centerY - maxSpread, bandWidth, maxSpread * 2);
-
-    const coreGlow = ctx.createLinearGradient(0, centerY - maxSpread * 0.55, 0, centerY + maxSpread * 0.55);
-    coreGlow.addColorStop(0, 'rgba(0,0,0,0)');
-    coreGlow.addColorStop(0.5, 'rgba(177,161,223,0.045)');
-    coreGlow.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = coreGlow;
-    ctx.fillRect(bandLeft, centerY - maxSpread * 0.55, bandWidth, maxSpread * 1.1);
-  }
-
-  beltParticles.forEach(p => {
-    const sx = p.worldX - cameraX + canvasW * 0.2;
+  asteroidCatalog.slice(0, budget).forEach(a => {
+    const au = beltInstanceAU(a);
+    const sx = au * PIXELS_PER_AU - cameraX + canvasW * 0.2;
     if (sx < -8 || sx > canvasW + 8) return;
-    const depthScale = 0.55 + (1 - p.depth) * 0.65;
-    const sy = centerY + p.yFrac * maxSpread * depthScale;
-    const r = Math.max(0.35, p.size * (0.8 + (1 - p.depth) * 0.45));
-    const alpha = p.opacity * (0.75 + (1 - p.depth) * 0.35);
 
-    if (r > 1.6) {
-      const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, r * 3.6);
-      glow.addColorStop(0, `rgba(188,170,132,${alpha * 0.32})`);
-      glow.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.beginPath();
-      ctx.arc(sx, sy, r * 3.6, 0, Math.PI * 2);
-      ctx.fillStyle = glow;
-      ctx.fill();
-    }
+    const depthScale = beltInstanceDepthScale(a);
+    const sy = centerY + a.yFrac * maxSpread * depthScale;
+    const r = (BELT_ROCK_MIN_PX + a.sizeT * (BELT_ROCK_MAX_PX - BELT_ROCK_MIN_PX)) * depthScale * 0.5;
+    const alpha = 0.28 + (1 - a.depth) * 0.42;
 
     ctx.beginPath();
     ctx.arc(sx, sy, r, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(176,160,126,${alpha})`;
     ctx.fill();
   });
+}
+
+// Restrained orientation marker for CERES: a tick and small label at its
+// true belt position, drawn on the 2D overlay above the rock field in
+// both the WebGL and fallback paths. No focus snap, card, or navigation
+// mode is attached to it anywhere else in the file (AC1).
+function drawCeresLabel() {
+  const sx = planetScreenX(CERES);
+  if (sx < -40 || sx > canvasW + 40) return;
+
+  const tickTopY = canvasH * 0.5 - canvasH * BELT_SPREAD_FRAC - 6;
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(240,230,218,0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(sx, tickTopY);
+  ctx.lineTo(sx, tickTopY + 6);
+  ctx.stroke();
+
+  ctx.font = '5px "Press Start 2P"';
+  ctx.fillStyle = 'rgba(240,230,218,0.5)';
+  ctx.textAlign = 'center';
+  ctx.fillText(CERES.name, sx, tickTopY - 6);
+  ctx.restore();
 }
 
 function drawProbes() {
@@ -1947,6 +1947,7 @@ function loop(ts) {
   beltGlActive = beltGlRenderer ? beltGlRenderer.frame({ cameraX, timeSec: beltTimeSec }) : false;
   beltGlCanvas.classList.toggle('gl-active', beltGlActive);
   if (!beltGlActive) drawBelt();
+  drawCeresLabel();
 
   // Advance spin state once per planet, then let the WebGL layer attempt
   // a frame from the current positions/rotations. WebGL only takes over
