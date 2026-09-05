@@ -1,8 +1,7 @@
 ---
 id: v1/D005-closing-card-blocks-scroll-back-feedback
 release: v1
-status: in_progress
-stage: build
+status: resolved
 severity: medium
 title: "Scrolling back from the closing (\"You made it to Pluto\") screen feels stuck"
 reference: E04-interface-motion-audio-cleanup/T006-validate-final-responsive-journey

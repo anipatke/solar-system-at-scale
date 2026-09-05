@@ -334,7 +334,12 @@ const MOONS = [
   { id: 'titania',  parentId: 'uranus',   name: 'TITANIA',  orbitalKm: 436_298,   diameterKm: 1_580, color: '#80DEEA', retrograde: false, orbitalPeriodDays: 8.705869 },
   { id: 'oberon',   parentId: 'uranus',   name: 'OBERON',   orbitalKm: 583_511,   diameterKm: 1_524, color: '#4DD0E1', retrograde: false, orbitalPeriodDays: 13.463237 },
   // Neptune
-  { id: 'triton',   parentId: 'neptune',  name: 'TRITON',   orbitalKm: 354_800,   diameterKm: 2_706, color: '#5C6BC0', retrograde: true,  orbitalPeriodDays: 5.876994 },
+  // orbitTiltDeg overrides the parent's axial tilt for this moon's orbital
+  // plane (D006): Triton's real orbit is inclined ~157 deg to Neptune's
+  // equator, not in-plane like a regular moon, which is why it's retrograde
+  // in the first place. Source: NASA Planetary Satellite Mean Orbital
+  // Parameters, https://ssd.jpl.nasa.gov/sats/elem/
+  { id: 'triton',   parentId: 'neptune',  name: 'TRITON',   orbitalKm: 354_800,   diameterKm: 2_706, color: '#5C6BC0', retrograde: true,  orbitalPeriodDays: 5.876994, orbitTiltDeg: 157 },
   { id: 'nereid',   parentId: 'neptune',  name: 'NEREID',   orbitalKm: 5_513_900, diameterKm: 340,   color: '#7986CB', retrograde: false, orbitalPeriodDays: 360.133039 },
   { id: 'proteus',  parentId: 'neptune',  name: 'PROTEUS',  orbitalKm: 117_600,   diameterKm: 420,   color: '#5C6BC0', retrograde: false, orbitalPeriodDays: 1.122315 },
   // Pluto
@@ -798,13 +803,17 @@ function drawMoons(dt) {
     const parentY = planetScreenY();
     const parentDisplayR = getDisplayRadius(parent, parentX);
     const parentVisualExtentR = getVisualExtentRadius(parent, parentX);
-    const orbitTilt = (parent.tiltDeg * Math.PI) / 180;
     // Orbit-plane flatness follows the parent's real axial tilt instead of a
     // flat constant: a near-0°/180° tilt (e.g. Jupiter, Venus) views its
     // near-equatorial moon orbits almost edge-on from within the solar
     // system's plane, while a near-90° tilt (e.g. Uranus) views them nearly
     // face-on. This is a disclosed 2D approximation (SCALE-02), not a
-    // literal projection.
+    // literal projection. A moon's own `orbitTiltDeg` (D006), when present,
+    // overrides the parent's plane for moons whose real orbit isn't in the
+    // parent's equatorial plane (e.g. Triton) — every other moon still falls
+    // through to the parent's tiltDeg, so this changes no other rendering.
+    const tiltDeg = moon.orbitTiltDeg ?? parent.tiltDeg;
+    const orbitTilt = (tiltDeg * Math.PI) / 180;
     const yComp = Math.abs(Math.sin(orbitTilt));
 
     // Skip if parent planet is way off-screen (orbit ring + dot would be invisible anyway)

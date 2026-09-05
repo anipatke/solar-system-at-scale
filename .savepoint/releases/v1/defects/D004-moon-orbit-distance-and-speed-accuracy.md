@@ -1,8 +1,7 @@
 ---
 id: v1/D004-moon-orbit-distance-and-speed-accuracy
 release: v1
-status: in_progress
-stage: build
+status: resolved
 severity: medium
 title: "Moon orbit distances and speeds are still only approximate"
 reference: E04-interface-motion-audio-cleanup/T003-calm-moon-and-interface-motion
