@@ -41,14 +41,14 @@
     </div>
   </div>
 
-  <aside id="scale-lab" aria-label="Real scale companion views">
+  <aside id="scale-lab" class="collapsed" aria-label="Real scale companion views">
     <div id="scale-lab-header">
       <div>
-        <p class="scale-lab-kicker">REAL SCALE LAB</p>
-        <h2 id="scale-lab-title">Split View [Beta]</h2>
+        <p class="scale-lab-kicker" id="scale-lab-kicker">REAL SCALE LAB</p>
+        <h2 id="scale-lab-title">True Scale Readout</h2>
       </div>
-      <button id="scale-lab-toggle" type="button" aria-expanded="true" aria-controls="scale-lab-body">
-        <span id="scale-lab-toggle-label">HIDE</span>
+      <button id="scale-lab-toggle" type="button" aria-expanded="false" aria-controls="scale-lab-body" aria-labelledby="scale-lab-kicker scale-lab-toggle-label">
+        <span id="scale-lab-toggle-label">SHOW</span>
       </button>
     </div>
 
@@ -59,46 +59,15 @@
         <span id="scale-lab-focus-meta">Default readable mode vs physical scale</span>
       </div>
 
-      <section class="scale-view active" id="scale-view-split" aria-label="Split comparison view">
-        <p class="scale-view-copy" id="scale-split-copy"></p>
-        <div id="scale-split-grid">
-          <article class="scale-compare-card readable">
-            <span class="scale-compare-kicker">READABLE MODE</span>
-            <div class="scale-compare-stat">
-              <span class="scale-stat-label">BODY DIAMETER</span>
-              <span class="scale-stat-value" id="scale-split-readable-size"></span>
-            </div>
-            <div class="scale-meter"><div class="scale-meter-fill" id="scale-split-readable-size-fill"></div></div>
-            <div class="scale-compare-stat">
-              <span class="scale-stat-label">DISTANCE FROM SUN</span>
-              <span class="scale-stat-value" id="scale-split-readable-distance"></span>
-            </div>
-            <div class="scale-meter"><div class="scale-meter-fill" id="scale-split-readable-distance-fill"></div></div>
-          </article>
-
-          <article class="scale-compare-card true">
-            <span class="scale-compare-kicker">TRUE SCALE</span>
-            <div class="scale-compare-stat">
-              <span class="scale-stat-label">BODY DIAMETER</span>
-              <span class="scale-stat-value" id="scale-split-true-size"></span>
-            </div>
-            <div class="scale-meter"><div class="scale-meter-fill" id="scale-split-true-size-fill"></div></div>
-            <div class="scale-compare-stat">
-              <span class="scale-stat-label">DISTANCE FROM SUN</span>
-              <span class="scale-stat-value" id="scale-split-true-distance"></span>
-            </div>
-            <div class="scale-meter"><div class="scale-meter-fill" id="scale-split-true-distance-fill"></div></div>
-          </article>
+      <section class="scale-view active" id="scale-view-split" aria-label="True scale readout">
+        <p class="scale-view-copy" id="scale-readout-ratio"></p>
+        <div class="scale-meter">
+          <div class="scale-meter-fill" id="scale-readout-meter-fill" aria-hidden="true"></div>
+          <span class="scale-meter-end-label" id="scale-readout-meter-end-label" aria-hidden="true"></span>
         </div>
-        <p id="scale-split-summary"></p>
       </section>
     </div>
   </aside>
-
-  <!-- Mute button -->
-  <button id="mute-btn" aria-label="Toggle sound">
-    <span id="mute-icon">♪</span>
-  </button>
 
   <!-- Opening tagline -->
   <div id="intro">
@@ -119,7 +88,13 @@
   <!-- Transparent WebGL planet layer. Above the 2D scene, below DOM UI. -->
   <canvas id="planets-gl" aria-hidden="true"></canvas>
 
-  <!-- Info panel -->
+  <!-- Transparent 2D layer for the near-side half of each moon's orbit, so
+       a moon on the front of its orbital plane draws over the WebGL planet
+       sphere instead of always sitting beneath it (E04 T003 defect fix). -->
+  <canvas id="moons-front" aria-hidden="true"></canvas>
+
+  <!-- Info panel: one reusable card, at most four facts, for any planet,
+       belt marker, or probe (E04 T008 AC1/AC4). -->
   <div id="info-panel" class="info-panel">
     <div class="info-inner">
       <div class="info-header">
@@ -131,60 +106,20 @@
       </div>
       <div class="info-facts">
         <div class="fact">
-          <span class="fact-icon" id="fact-icon-1">🌍</span>
-          <div>
-            <span class="fact-label" id="fact-label-1">SIZE</span>
-            <span class="fact-value" id="fact-size"></span>
-          </div>
+          <span class="fact-label">SIZE</span>
+          <span class="fact-value" id="fact-size"></span>
         </div>
         <div class="fact">
-          <span class="fact-icon" id="fact-icon-2">✈️</span>
-          <div>
-            <span class="fact-label" id="fact-label-2">COMMERCIAL FLIGHT</span>
-            <span class="fact-value" id="fact-flight"></span>
-          </div>
+          <span class="fact-label">DISTANCE</span>
+          <span class="fact-value" id="fact-distance"></span>
         </div>
         <div class="fact">
-          <span class="fact-icon" id="fact-icon-3">👃</span>
-          <div>
-            <span class="fact-label" id="fact-label-3">SMELLS LIKE</span>
-            <span class="fact-value" id="fact-smell"></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="info-panel-secondary" class="info-panel info-panel-right">
-    <div class="info-inner">
-      <div class="info-header">
-        <span id="info2-symbol" class="info-symbol"></span>
-        <div>
-          <h2 id="info2-name" class="info-name"></h2>
-          <p id="info2-type" class="info-type"></p>
-        </div>
-      </div>
-      <div class="info-facts">
-        <div class="fact">
-          <span class="fact-icon" id="info2-fact-icon-1">🚗</span>
-          <div>
-            <span class="fact-label" id="info2-fact-label-1">SIZE</span>
-            <span class="fact-value" id="info2-fact-size"></span>
-          </div>
+          <span class="fact-label">SMELLS LIKE</span>
+          <span class="fact-value" id="fact-smell"></span>
         </div>
         <div class="fact">
-          <span class="fact-icon" id="info2-fact-icon-2">🛰️</span>
-          <div>
-            <span class="fact-label" id="info2-fact-label-2">MISSION / LAUNCH DATE</span>
-            <span class="fact-value" id="info2-fact-flight"></span>
-          </div>
-        </div>
-        <div class="fact">
-          <span class="fact-icon" id="info2-fact-icon-3">💭</span>
-          <div>
-            <span class="fact-label" id="info2-fact-label-3">HOW'S IT FEELING</span>
-            <span class="fact-value" id="info2-fact-smell"></span>
-          </div>
+          <span class="fact-label">SCREENS SWIPED</span>
+          <span class="fact-value" id="fact-screens"></span>
         </div>
       </div>
     </div>
@@ -219,11 +154,6 @@
 
   <!-- Scanline overlay -->
   <div id="scanlines"></div>
-
-  <!-- Hidden audio -->
-  <audio id="ambient" loop preload="auto">
-    <source src="audio/ambient.mp3" type="audio/mpeg" />
-  </audio>
 
   <!-- Vercel Analytics -->
   <script defer src="/_vercel/insights/script.js"></script>

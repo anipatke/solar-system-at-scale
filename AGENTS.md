@@ -105,7 +105,7 @@ There is no build step. User-visible rendering and interaction changes also requ
 | `index.html` | Static page shell and semantic interface overlays |
 | `style.css` | Design tokens, layout, controls, and responsive presentation |
 | `main.js` | Solar-system data, camera/input state, rendering, HUD, and focus behavior |
-| `audio/ambient.mp3` | Current ambient track, scheduled for removal in v1 E04 |
+| `rendering/` | WebGL planet/asteroid-belt renderers and material data; additive to the 2D canvas fallback |
 | `vercel.json` | Static routing and response headers |
 | `context.md` | Compact implementation context; not a replacement for Savepoint planning artifacts |
 | `.savepoint/` | Product, architecture, release, policy, task, and audit sources of truth |

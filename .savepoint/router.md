@@ -17,9 +17,9 @@ Read `.savepoint/PRD.md` only for vision changes. Read `.savepoint/Design.md` on
 ```yaml
 state: task-building
 release: v1
-epic: E02
-task: E03-sparse-3d-asteroid-belt/T002-integrate-belt-orientation-and-fallback
-next_action: Build E03-sparse-3d-asteroid-belt/T002-integrate-belt-orientation-and-fallback.
+epic: E04-interface-motion-audio-cleanup
+task: E04-interface-motion-audio-cleanup/T008-restore-smell-and-add-screens-facts
+next_action: Build E04-interface-motion-audio-cleanup/T008-restore-smell-and-add-screens-facts.
 ```
 
 ## Skill Activation

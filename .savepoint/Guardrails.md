@@ -60,7 +60,7 @@ These are the only project rules that may block or condition Savepoint work. The
 
 | ID | Severity | Rule |
 |---|---|---|
-| CONTENT-01 | Required | Information cards expose no more than two concise facts per active target in the v1 presentation. |
+| CONTENT-01 | Required | Information cards expose no more than four concise facts per active target in the v1 presentation. |
 | CONTENT-02 | Guideline | Copy remains warm and human but does not trade scientific credibility for novelty. |
 | PRIV-01 | Required | Do not add user tracking, storage, or network data flows beyond the existing disclosed deployment analytics without owner approval. |
 | AUDIO-01 | Required | The v1 experience must not start, request, or expose ambient audio playback. |

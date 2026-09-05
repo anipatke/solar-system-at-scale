@@ -44,6 +44,21 @@ const TRUE_SIZE_MIN_RADIUS = 1.5;
 // camera travel, focus snapping, or information display.
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+// One shared, documented scale factor (SCALE-03) converts each body's real
+// sidereal rotation period (hours, magnitude only — direction is the
+// separate `retrograde` flag) into its visual rotationSpeed, replacing the
+// prior independently hand-tuned constants. The factor is calibrated so
+// Jupiter — the fastest real rotator — keeps its prior top-end visual pace
+// (old Jupiter rotationSpeed 0.018 * its 9.925h period); every other body's
+// speed then follows in direct proportion to its real period, so relative
+// ordering (e.g. Jupiter/Saturn fast, Mercury/Venus slow) matches reality.
+// Source: NASA Planetary Fact Sheet, https://nssdc.gsfc.nasa.gov/planetary/factsheet/
+const ROTATION_SPEED_SCALE = 0.018 * 9.925;
+
+function getRotationSpeedFromPeriod(periodHours) {
+  return ROTATION_SPEED_SCALE / periodHours;
+}
+
 // ── PLANET DATA ──────────────────────────────────────────────
 const PLANETS = [
   {
@@ -54,11 +69,11 @@ const PLANETS = [
     distanceAU: 0,
     tiltDeg: 7,
     retrograde: false,
-    rotationSpeed: 0.003,
+    rotationPeriodHours: 609.12,   // 25.38 days, equatorial
     facts: {
-      size:   '1.3 million Earths fit inside',
-      flight: '~19 years at cruising speed',
-      smell:  'Like a giant oven mixed with sparklers',
+      size:      '1.3 million Earths fit inside',
+      distance: '~19 years at cruising speed',
+      smellsLike: 'Ozone and static — assuming smell could survive getting anywhere close',
     },
     colors: {
       core:    '#FFF176',
@@ -75,12 +90,12 @@ const PLANETS = [
     distanceAU: 0.387,
     tiltDeg: 0.03,
     retrograde: false,
-    rotationSpeed: 0.004,
+    rotationPeriodHours: 1407.6,   // 58.65 days
     small: true,
     facts: {
-      size:   '18 Mercurys fit inside Earth',
-      flight: '~9 years at cruising speed',
-      smell:  'Like hot metal and fireworks',
+      size:      '18 Mercurys fit inside Earth',
+      distance: '~9 years at cruising speed',
+      smellsLike: 'Sun-scorched metal on one side, freezer-locked rock on the other',
     },
     colors: {
       core:  '#9E9E9E',
@@ -97,11 +112,11 @@ const PLANETS = [
     distanceAU: 0.723,
     tiltDeg: 177,
     retrograde: true,
-    rotationSpeed: 0.002,
+    rotationPeriodHours: 5832.5,   // 243.02 days, retrograde
     facts: {
-      size:   'Nearly the same size as Earth',
-      flight: '~5 years at cruising speed',
-      smell:  'Like a nasty chemistry-lab stink',
+      size:      'Nearly the same size as Earth',
+      distance: '~5 years at cruising speed',
+      smellsLike: 'Sulfuric acid clouds that never quite reach the ground',
     },
     colors: {
       core:  '#F5DEB3',
@@ -118,11 +133,11 @@ const PLANETS = [
     distanceAU: 1.0,
     tiltDeg: 23.5,
     retrograde: false,
-    rotationSpeed: 0.008,
+    rotationPeriodHours: 23.9345,
     facts: {
-      size:   'This is the reference. You are here.',
-      flight: 'You\'re already here',
-      smell:  'Rain, ocean air, and forests',
+      size:      'This is the reference. You are here.',
+      distance: 'You\'re already here',
+      smellsLike: 'Rain, ozone, and cut grass — the only stop that smells like home',
     },
     colors: {
       core:  '#1565C0',
@@ -140,12 +155,12 @@ const PLANETS = [
     distanceAU: 1.524,
     tiltDeg: 25,
     retrograde: false,
-    rotationSpeed: 0.007,
+    rotationPeriodHours: 24.6229,
     small: true,
     facts: {
-      size:   'About half the size of Earth',
-      flight: '~10 years at cruising speed',
-      smell:  'Like dusty rocks and rusty metal',
+      size:      'About half the size of Earth',
+      distance: '~10 years at cruising speed',
+      smellsLike: 'Rusted iron and fine dust that gets into absolutely everything',
     },
     colors: {
       core:  '#BF360C',
@@ -162,11 +177,11 @@ const PLANETS = [
     distanceAU: 5.203,
     tiltDeg: 3,
     retrograde: false,
-    rotationSpeed: 0.018,   // fastest rotator
+    rotationPeriodHours: 9.925,   // fastest real rotator
     facts: {
-      size:   '1,321 Earths fit inside',
-      flight: '~80 years at cruising speed',
-      smell:  'Like a giant stinky egg storm',
+      size:      '1,321 Earths fit inside',
+      distance: '~80 years at cruising speed',
+      smellsLike: 'Ammonia and rotten eggs, churning at hurricane speed forever',
     },
     colors: {
       core:   '#C8A96E',
@@ -186,11 +201,11 @@ const PLANETS = [
     distanceAU: 9.537,
     tiltDeg: 27,
     retrograde: false,
-    rotationSpeed: 0.014,
+    rotationPeriodHours: 10.656,
     facts: {
-      size:   '764 Earths fit inside',
-      flight: '~150 years at cruising speed',
-      smell:  'Like cold, sharp cleaning spray',
+      size:      '764 Earths fit inside',
+      distance: '~150 years at cruising speed',
+      smellsLike: 'Cold ammonia ice with a faint whiff of showing off — it has rings',
     },
     colors: {
       core:   '#E8C97A',
@@ -211,12 +226,12 @@ const PLANETS = [
     type: 'PLANET',
     distanceAU: 19.191,
     tiltDeg: 98,
-    retrograde: false,
-    rotationSpeed: 0.006,
+    retrograde: true,   // corrected: NASA lists a negative (retrograde) rotation period, consistent with its >90° tilt
+    rotationPeriodHours: 17.24,
     facts: {
-      size:   '63 Earths fit inside',
-      flight: '~340 years at cruising speed',
-      smell:  'Like the worst fart in the solar system',
+      size:      '63 Earths fit inside',
+      distance: '~340 years at cruising speed',
+      smellsLike: 'Rotten eggs, but frozen solid and tipped on its side',
     },
     colors: {
       core:  '#80DEEA',
@@ -233,11 +248,11 @@ const PLANETS = [
     distanceAU: 30.069,
     tiltDeg: 28,
     retrograde: false,
-    rotationSpeed: 0.007,
+    rotationPeriodHours: 16.11,
     facts: {
-      size:   '57 Earths fit inside',
-      flight: '~555 years at cruising speed',
-      smell:  'Like a freezing swamp of weird gas',
+      size:      '57 Earths fit inside',
+      distance: '~555 years at cruising speed',
+      smellsLike: 'Frozen methane with a chill that goes all the way through',
     },
     colors: {
       core:  '#1A237E',
@@ -254,12 +269,12 @@ const PLANETS = [
     distanceAU: 39.482,
     tiltDeg: 122,
     retrograde: true,
-    rotationSpeed: 0.002,
+    rotationPeriodHours: 153.3,   // 6.3872 days, retrograde
     small: true,
     facts: {
-      size:   '170 Plutos fit inside Earth',
-      flight: '~745 years at cruising speed',
-      smell:  'Like freezer-burnt ice and cold dust',
+      size:      '170 Plutos fit inside Earth',
+      distance: '~745 years at cruising speed',
+      smellsLike: 'Frozen nitrogen and old ice, patient after 4.5 billion years',
     },
     colors: {
       core:  '#8D6E63',
@@ -270,6 +285,12 @@ const PLANETS = [
   },
 ];
 
+// Derive each planet's visual rotationSpeed from its real rotationPeriodHours
+// via the one shared scale factor above (SCALE-03) — no per-planet tuning.
+PLANETS.forEach(planet => {
+  planet.rotationSpeed = getRotationSpeedFromPeriod(planet.rotationPeriodHours);
+});
+
 // Total scroll distance in AU (Pluto + some breathing room)
 const TOTAL_AU = PLANETS[PLANETS.length - 1].distanceAU + 4;
 const TRUE_SCALE_BASELINE_BODY_ID = 'pluto';
@@ -277,8 +298,9 @@ const TRUE_SCALE_BASELINE_BODY_ID = 'pluto';
 // ── MOON DATA ────────────────────────────────────────────────
 // orbitalKm: distance from planet center (km)
 // diameterKm: moon diameter (km)
-// Moon systems are rendered as proportional multiples of the parent's radius.
-// Tiny moons still get a minimum visible size.
+// Distances and periods are rounded from NASA/JPL mean elements and NASA
+// moon fact pages. The visual model keeps the relative ordering and cadence
+// but still compresses the systems enough to stay readable.
 const SUN_ACTUAL_R_KM = 695_700;
 const TRUE_SCALE_BASELINE_RADIUS_KM = SIZE_RATIO_TO_SUN[TRUE_SCALE_BASELINE_BODY_ID] * SUN_ACTUAL_R_KM;
 const TRUE_SCALE_PX_PER_KM = TRUE_SIZE_MIN_RADIUS / TRUE_SCALE_BASELINE_RADIUS_KM;
@@ -286,26 +308,48 @@ const TRUE_SCALE_PX_PER_AU = AU_KM * TRUE_SCALE_PX_PER_KM;
 
 const MOONS = [
   // Earth
-  { id: 'moon',     parentId: 'earth',   name: 'MOON',     orbitalKm: 384_400,   diameterKm: 3_474, color: '#B0BEC5', retrograde: false, orbitalPeriodDays: 27.32 },
+  { id: 'moon',     parentId: 'earth',   name: 'MOON',     orbitalKm: 384_400,   diameterKm: 3_474, color: '#B0BEC5', retrograde: false, orbitalPeriodDays: 27.322 },
   // Mars
-  { id: 'phobos',   parentId: 'mars',    name: 'PHOBOS',   orbitalKm: 9_376,     diameterKm: 22,    color: '#8D6E63', retrograde: false, orbitalPeriodDays: 0.319 },
-  { id: 'deimos',   parentId: 'mars',    name: 'DEIMOS',   orbitalKm: 23_458,    diameterKm: 12,    color: '#795548', retrograde: false, orbitalPeriodDays: 1.263 },
-  // Jupiter — Galilean moons
-  { id: 'io',       parentId: 'jupiter', name: 'IO',       orbitalKm: 421_700,   diameterKm: 3_643, color: '#F4CF47', retrograde: false, orbitalPeriodDays: 1.769 },
-  { id: 'europa',   parentId: 'jupiter', name: 'EUROPA',   orbitalKm: 671_100,   diameterKm: 3_122, color: '#CFB99A', retrograde: false, orbitalPeriodDays: 3.551 },
-  { id: 'ganymede', parentId: 'jupiter', name: 'GANYMEDE', orbitalKm: 1_070_400, diameterKm: 5_268, color: '#9E9E9E', retrograde: false, orbitalPeriodDays: 7.155 },
-  { id: 'callisto', parentId: 'jupiter', name: 'CALLISTO', orbitalKm: 1_882_700, diameterKm: 4_821, color: '#616161', retrograde: false, orbitalPeriodDays: 16.69 },
-  // Saturn
-  { id: 'rhea',     parentId: 'saturn',  name: 'RHEA',     orbitalKm: 527_108,   diameterKm: 1_528, color: '#CFD8DC', retrograde: false, orbitalPeriodDays: 4.518 },
-  { id: 'titan',    parentId: 'saturn',  name: 'TITAN',    orbitalKm: 1_221_870, diameterKm: 5_149, color: '#E8A84E', retrograde: false, orbitalPeriodDays: 15.95 },
+  { id: 'phobos',   parentId: 'mars',    name: 'PHOBOS',   orbitalKm: 9_375,     diameterKm: 23,    color: '#8D6E63', retrograde: false, orbitalPeriodDays: 0.3187 },
+  { id: 'deimos',   parentId: 'mars',    name: 'DEIMOS',   orbitalKm: 23_457,    diameterKm: 13,    color: '#795548', retrograde: false, orbitalPeriodDays: 1.2625 },
+  // Jupiter — the best-known moons, plus one outer family member
+  { id: 'io',       parentId: 'jupiter', name: 'IO',       orbitalKm: 421_800,   diameterKm: 3_643, color: '#F4CF47', retrograde: false, orbitalPeriodDays: 1.762732 },
+  { id: 'europa',   parentId: 'jupiter', name: 'EUROPA',   orbitalKm: 671_100,   diameterKm: 3_122, color: '#CFB99A', retrograde: false, orbitalPeriodDays: 3.525463 },
+  { id: 'ganymede', parentId: 'jupiter', name: 'GANYMEDE', orbitalKm: 1_070_400, diameterKm: 5_268, color: '#9E9E9E', retrograde: false, orbitalPeriodDays: 7.155588 },
+  { id: 'callisto', parentId: 'jupiter', name: 'CALLISTO', orbitalKm: 1_882_700, diameterKm: 4_821, color: '#616161', retrograde: false, orbitalPeriodDays: 16.690440 },
+  { id: 'amalthea', parentId: 'jupiter', name: 'AMALTHEA', orbitalKm: 181_400,   diameterKm: 167,   color: '#BCAAA4', retrograde: false, orbitalPeriodDays: 0.499918 },
+  { id: 'himalia',  parentId: 'jupiter', name: 'HIMALIA',  orbitalKm: 11_439_000, diameterKm: 170,   color: '#8D8D8D', retrograde: false, orbitalPeriodDays: 249.9090 },
+  // Saturn — a compact set of the most recognizable moons
+  { id: 'mimas',    parentId: 'saturn',   name: 'MIMAS',    orbitalKm: 186_000,   diameterKm: 396,   color: '#E0E0E0', retrograde: false, orbitalPeriodDays: 0.942422 },
+  { id: 'enceladus',parentId: 'saturn',   name: 'ENCELADUS',orbitalKm: 238_400,   diameterKm: 504,   color: '#F5F5F5', retrograde: false, orbitalPeriodDays: 1.370218 },
+  { id: 'tethys',   parentId: 'saturn',   name: 'TETHYS',   orbitalKm: 295_000,   diameterKm: 1_062, color: '#CFD8DC', retrograde: false, orbitalPeriodDays: 1.887802 },
+  { id: 'dione',    parentId: 'saturn',   name: 'DIONE',    orbitalKm: 377_700,   diameterKm: 1_123, color: '#BDBDBD', retrograde: false, orbitalPeriodDays: 2.736916 },
+  { id: 'rhea',     parentId: 'saturn',   name: 'RHEA',     orbitalKm: 527_200,   diameterKm: 1_527, color: '#CFD8DC', retrograde: false, orbitalPeriodDays: 4.517503 },
+  { id: 'titan',    parentId: 'saturn',   name: 'TITAN',    orbitalKm: 1_221_900, diameterKm: 5_150, color: '#E8A84E', retrograde: false, orbitalPeriodDays: 15.945448 },
+  { id: 'iapetus',  parentId: 'saturn',   name: 'IAPETUS',  orbitalKm: 3_561_700, diameterKm: 1_460, color: '#A1887F', retrograde: false, orbitalPeriodDays: 79.331002 },
   // Uranus
-  { id: 'titania',  parentId: 'uranus',  name: 'TITANIA',  orbitalKm: 435_910,   diameterKm: 1_578, color: '#80DEEA', retrograde: false, orbitalPeriodDays: 8.706 },
-  { id: 'oberon',   parentId: 'uranus',  name: 'OBERON',   orbitalKm: 583_520,   diameterKm: 1_523, color: '#4DD0E1', retrograde: false, orbitalPeriodDays: 13.46 },
+  { id: 'miranda',  parentId: 'uranus',   name: 'MIRANDA',  orbitalKm: 129_846,   diameterKm: 472,   color: '#90A4AE', retrograde: false, orbitalPeriodDays: 1.413479 },
+  { id: 'ariel',    parentId: 'uranus',   name: 'ARIEL',    orbitalKm: 190_929,   diameterKm: 1_158, color: '#80DEEA', retrograde: false, orbitalPeriodDays: 2.520379 },
+  { id: 'umbriel',  parentId: 'uranus',   name: 'UMBRIEL',  orbitalKm: 265_986,   diameterKm: 1_172, color: '#4FC3F7', retrograde: false, orbitalPeriodDays: 4.144177 },
+  { id: 'titania',  parentId: 'uranus',   name: 'TITANIA',  orbitalKm: 436_298,   diameterKm: 1_580, color: '#80DEEA', retrograde: false, orbitalPeriodDays: 8.705869 },
+  { id: 'oberon',   parentId: 'uranus',   name: 'OBERON',   orbitalKm: 583_511,   diameterKm: 1_524, color: '#4DD0E1', retrograde: false, orbitalPeriodDays: 13.463237 },
   // Neptune
-  { id: 'triton',   parentId: 'neptune', name: 'TRITON',   orbitalKm: 354_759,   diameterKm: 2_707, color: '#5C6BC0', retrograde: true,  orbitalPeriodDays: 5.877 },
+  { id: 'triton',   parentId: 'neptune',  name: 'TRITON',   orbitalKm: 354_800,   diameterKm: 2_706, color: '#5C6BC0', retrograde: true,  orbitalPeriodDays: 5.876994 },
+  { id: 'nereid',   parentId: 'neptune',  name: 'NEREID',   orbitalKm: 5_513_900, diameterKm: 340,   color: '#7986CB', retrograde: false, orbitalPeriodDays: 360.133039 },
+  { id: 'proteus',  parentId: 'neptune',  name: 'PROTEUS',  orbitalKm: 117_600,   diameterKm: 420,   color: '#5C6BC0', retrograde: false, orbitalPeriodDays: 1.122315 },
   // Pluto
-  { id: 'charon',   parentId: 'pluto',   name: 'CHARON',   orbitalKm: 19_591,    diameterKm: 1_212, color: '#A1887F', retrograde: false, orbitalPeriodDays: 6.387 },
+  { id: 'charon',   parentId: 'pluto',   name: 'CHARON',   orbitalKm: 19_600,    diameterKm: 1_212, color: '#A1887F', retrograde: false, orbitalPeriodDays: 6.387222 },
 ];
+
+// One shared visual-period calculation for every moon (STYLE-03): 24 visual
+// seconds per real orbital day. This is a disclosed compression, not a
+// literal orbital simulation, but the relative speed differences stay intact
+// and the fast inner moons remain visibly faster than the outer ones.
+const MOON_VISUAL_SECONDS_PER_ORBITAL_DAY = 24;
+
+function getMoonVisualPeriodSec(moon) {
+  return moon.orbitalPeriodDays * MOON_VISUAL_SECONDS_PER_ORBITAL_DAY;
+}
 
 // ── ASTEROID BELT ────────────────────────────────────────────
 // Main belt: 2.2–3.2 AU from the Sun
@@ -319,8 +363,8 @@ const ASTEROID_BELT = {
   distanceAU: (BELT_INNER_AU + BELT_OUTER_AU) / 2,
   facts: {
     size: 'Millions of rocky leftovers, from dust to dwarf-planet chunks',
-    flight: '~30 years at cruising speed to the middle',
-    smell: 'Like a smashed-up rock quarry in deep freeze',
+    distance: '~30 years at cruising speed to the middle',
+    smellsLike: 'Metal dust and old rock, spread thin enough that smell barely applies',
   },
 };
 
@@ -342,8 +386,8 @@ const PROBES = [
     distanceAU: 0.09,
     facts: {
       size: 'About hatchback-length, but far flatter and wider',
-      flight: 'Mission: study the Sun up close / Launched: August 12, 2018',
-      smell: 'Overcaffeinated. Very hot. Still committed to the bit.',
+      distance: 'Mission: study the Sun up close / Launched: August 12, 2018',
+      smellsLike: 'Overcaffeinated. Very hot. Still committed to the bit.',
     },
   },
   {
@@ -354,8 +398,8 @@ const PROBES = [
     distanceAU: 0.29,
     facts: {
       size: 'A bit wider than a hatchback once the solar arrays are counted',
-      flight: 'Mission: image the Sun and heliosphere / Launched: February 10, 2020',
-      smell: 'Busy, sunstruck, and trying to keep every instrument pointed right.',
+      distance: 'Mission: image the Sun and heliosphere / Launched: February 10, 2020',
+      smellsLike: 'Busy, sunstruck, and trying to keep every instrument pointed right.',
     },
   },
   {
@@ -366,8 +410,8 @@ const PROBES = [
     distanceAU: 0.50,
     facts: {
       size: 'Roughly hatchback-scale, with very non-hatchback solar wings',
-      flight: 'Mission: retargeted from Bennu to Apophis / Launched: September 8, 2016',
-      smell: 'Slightly smug. Already pulled off one asteroid job and wants another.',
+      distance: 'Mission: retargeted from Bennu to Apophis / Launched: September 8, 2016',
+      smellsLike: 'Slightly smug. Already pulled off one asteroid job and wants another.',
     },
   },
   {
@@ -378,8 +422,8 @@ const PROBES = [
     distanceAU: 5.203,
     facts: {
       size: 'Closer to SUV span than hatchback once the panels are out',
-      flight: 'Mission: orbit and study Jupiter / Launched: August 5, 2011',
-      smell: 'Icy, battered, and absolutely locked in on giant storms.',
+      distance: 'Mission: orbit and study Jupiter / Launched: August 5, 2011',
+      smellsLike: 'Icy, battered, and absolutely locked in on giant storms.',
     },
   },
 ];
@@ -394,13 +438,11 @@ let stars = [];
 let rotations   = {};      // { planetId: angle }
 let moonAngles  = {};      // { moonId: angle }
 let activePlanet = null;   // currently shown in info panel
-let activeProbes = [];
+let activeProbe  = null;   // single nearest probe shown in info panel during probe mode
 let displayMode = 'planets';
-let isScaleLabCollapsed = false;
+let isScaleLabCollapsed = true;   // Scale Lab starts collapsed behind its disclosure on every viewport
 let introGone = false;
 let closingShown = false;
-let audioStarted = false;
-let isMuted = false;
 let lastFrameTime = 0;
 let scrollIdleTimer = null;  // timer to detect scroll stop
 let isSnapping = false;      // currently auto-centering a planet
@@ -417,9 +459,10 @@ const canvas   = document.getElementById('space');
 const ctx      = canvas.getContext('2d');
 const glCanvas = document.getElementById('planets-gl');
 const beltGlCanvas = document.getElementById('belt-gl');
+const moonsFrontCanvas = document.getElementById('moons-front');
+const moonsFrontCtx = moonsFrontCanvas.getContext('2d');
 const intro    = document.getElementById('intro');
 const infoPanel = document.getElementById('info-panel');
-const infoPanelSecondary = document.getElementById('info-panel-secondary');
 const closingCard = document.getElementById('closing-card');
 const rulerNeedle = document.getElementById('ruler-needle');
 const rulerKm  = document.getElementById('ruler-km');
@@ -436,46 +479,18 @@ const scaleLabToggleLabel = document.getElementById('scale-lab-toggle-label');
 const scaleLabFocusName = document.getElementById('scale-lab-focus-name');
 const scaleLabFocusMeta = document.getElementById('scale-lab-focus-meta');
 const scaleViewSplit = document.getElementById('scale-view-split');
-const scaleSplitCopy = document.getElementById('scale-split-copy');
-const scaleSplitReadableSize = document.getElementById('scale-split-readable-size');
-const scaleSplitReadableSizeFill = document.getElementById('scale-split-readable-size-fill');
-const scaleSplitReadableDistance = document.getElementById('scale-split-readable-distance');
-const scaleSplitReadableDistanceFill = document.getElementById('scale-split-readable-distance-fill');
-const scaleSplitTrueSize = document.getElementById('scale-split-true-size');
-const scaleSplitTrueSizeFill = document.getElementById('scale-split-true-size-fill');
-const scaleSplitTrueDistance = document.getElementById('scale-split-true-distance');
-const scaleSplitTrueDistanceFill = document.getElementById('scale-split-true-distance-fill');
-const scaleSplitSummary = document.getElementById('scale-split-summary');
-const muteBtn  = document.getElementById('mute-btn');
-const muteIcon = document.getElementById('mute-icon');
-const audio    = document.getElementById('ambient');
+const scaleReadoutRatio = document.getElementById('scale-readout-ratio');
+const scaleReadoutMeterFill = document.getElementById('scale-readout-meter-fill');
+const scaleReadoutMeterEndLabel = document.getElementById('scale-readout-meter-end-label');
 
 // Info panel fields
-const infoSymbol  = document.getElementById('info-symbol');
-const infoName    = document.getElementById('info-name');
-const infoType    = document.getElementById('info-type');
-const factSize    = document.getElementById('fact-size');
-const factFlight  = document.getElementById('fact-flight');
-const factSmell   = document.getElementById('fact-smell');
-const factIcon1   = document.getElementById('fact-icon-1');
-const factIcon2   = document.getElementById('fact-icon-2');
-const factIcon3   = document.getElementById('fact-icon-3');
-const factLabel1  = document.getElementById('fact-label-1');
-const factLabel2  = document.getElementById('fact-label-2');
-const factLabel3  = document.getElementById('fact-label-3');
-
-const info2Symbol  = document.getElementById('info2-symbol');
-const info2Name    = document.getElementById('info2-name');
-const info2Type    = document.getElementById('info2-type');
-const info2FactSize   = document.getElementById('info2-fact-size');
-const info2FactFlight = document.getElementById('info2-fact-flight');
-const info2FactSmell  = document.getElementById('info2-fact-smell');
-const info2FactIcon1  = document.getElementById('info2-fact-icon-1');
-const info2FactIcon2  = document.getElementById('info2-fact-icon-2');
-const info2FactIcon3  = document.getElementById('info2-fact-icon-3');
-const info2FactLabel1 = document.getElementById('info2-fact-label-1');
-const info2FactLabel2 = document.getElementById('info2-fact-label-2');
-const info2FactLabel3 = document.getElementById('info2-fact-label-3');
+const infoSymbol    = document.getElementById('info-symbol');
+const infoName      = document.getElementById('info-name');
+const infoType      = document.getElementById('info-type');
+const factSize      = document.getElementById('fact-size');
+const factDistance = document.getElementById('fact-distance');
+const factSmell     = document.getElementById('fact-smell');
+const factScreens   = document.getElementById('fact-screens');
 
 // Closing card fields
 const closeOortInner = document.getElementById('close-oort-inner');
@@ -522,6 +537,8 @@ function initBeltGlRenderer() {
 function resize() {
   canvasW = canvas.width  = window.innerWidth;
   canvasH = canvas.height = window.innerHeight;
+  moonsFrontCanvas.width  = canvasW;
+  moonsFrontCanvas.height = canvasH;
   totalScrollPx = TOTAL_AU * PIXELS_PER_AU;
   if (glRenderer) glRenderer.resize(canvasW, canvasH);
   if (beltGlRenderer) {
@@ -645,7 +662,9 @@ function buildStars() {
 
 function drawStars(dt) {
   stars.forEach(s => {
-    s.twinkle += s.speed * dt * 0.001;
+    // A11Y-02: twinkle is decorative; freeze it under reduced motion while
+    // stars themselves stay visible at their last-drawn brightness.
+    if (!prefersReducedMotion.matches) s.twinkle += s.speed * dt * 0.001;
     const alpha = s.opacity * (0.7 + 0.3 * Math.sin(s.twinkle));
     // parallax: further stars scroll less
     const parallaxX = (cameraX * (1 - s.depth * 0.7)) % canvasW;
@@ -720,7 +739,7 @@ function drawProbes() {
     const laneOffset = direction * (16 + Math.floor(index / 2) * 18);
     const labelY = labelBaseY + laneOffset;
     const markerY = canvasH * 0.41;
-    const isActive = activeProbes.some(active => active.id === probe.id);
+    const isActive = activeProbe != null && activeProbe.id === probe.id;
 
     ctx.save();
 
@@ -755,7 +774,12 @@ function drawProbes() {
 }
 
 function drawMoons(dt) {
-  const yComp = 0.4;  // vertical compression for orbital perspective
+  // The WebGL planet layer (#planets-gl) paints above the main 2D canvas,
+  // so a moon drawn only on the main canvas would always sit behind the
+  // planet sphere regardless of its actual orbital position. #moons-front
+  // sits above the planet layer and holds only the near-side half of each
+  // orbit for this frame, so it needs a fresh clear before redrawing.
+  moonsFrontCtx.clearRect(0, 0, canvasW, canvasH);
 
   MOONS.forEach(moon => {
     const parent = PLANETS.find(p => p.id === moon.parentId);
@@ -764,13 +788,24 @@ function drawMoons(dt) {
     const parentDisplayR = getDisplayRadius(parent, parentX);
     const parentVisualExtentR = getVisualExtentRadius(parent, parentX);
     const orbitTilt = (parent.tiltDeg * Math.PI) / 180;
+    // Orbit-plane flatness follows the parent's real axial tilt instead of a
+    // flat constant: a near-0°/180° tilt (e.g. Jupiter, Venus) views its
+    // near-equatorial moon orbits almost edge-on from within the solar
+    // system's plane, while a near-90° tilt (e.g. Uranus) views them nearly
+    // face-on. This is a disclosed 2D approximation (SCALE-02), not a
+    // literal projection.
+    const yComp = Math.abs(Math.sin(orbitTilt));
 
     // Skip if parent planet is way off-screen (orbit ring + dot would be invisible anyway)
     if (parentX < -canvasW || parentX > canvasW * 2) return;
 
-    // Advance orbital angle — 1 real second ≈ 1 simulated day
-    const dir = moon.retrograde ? -1 : 1;
-    moonAngles[moon.id] += dir * (2 * Math.PI) / moon.orbitalPeriodDays / 1000 * dt;
+    // Advance orbital angle using the shared calm visual-period calculation.
+    // A11Y-02: frozen under prefers-reduced-motion, same as planet rotation.
+    if (!prefersReducedMotion.matches) {
+      const dir = moon.retrograde ? -1 : 1;
+      const visualPeriodSec = getMoonVisualPeriodSec(moon);
+      moonAngles[moon.id] += dir * (2 * Math.PI) / visualPeriodSec / 1000 * dt;
+    }
 
     const angle = moonAngles[moon.id];
 
@@ -805,10 +840,18 @@ function drawMoons(dt) {
     const localMoonY = Math.sin(angle) * visibleOrbitPx * yComp;
     const moonX = parentX + localMoonX * Math.cos(orbitTilt) - localMoonY * Math.sin(orbitTilt);
     const moonY = parentY + localMoonX * Math.sin(orbitTilt) + localMoonY * Math.cos(orbitTilt);
-    ctx.beginPath();
-    ctx.arc(moonX, moonY, Math.max(0.8, moonDispR), 0, Math.PI * 2);
-    ctx.fillStyle = moon.color;
-    ctx.fill();
+
+    // sin(angle) before tilt/scale is applied is the same value that would
+    // carry an orbit's depth in a full 3D projection: one half of the local
+    // circle is the near side of the tilted plane, the other the far side.
+    // Draw the near half on the layer above the WebGL planet sphere so it
+    // correctly occludes the planet instead of always sitting beneath it.
+    const isNearSide = Math.sin(angle) < 0;
+    const moonCtx = isNearSide ? moonsFrontCtx : ctx;
+    moonCtx.beginPath();
+    moonCtx.arc(moonX, moonY, Math.max(0.8, moonDispR), 0, Math.PI * 2);
+    moonCtx.fillStyle = moon.color;
+    moonCtx.fill();
   });
 }
 
@@ -854,22 +897,19 @@ function getProbeVisualX(probe) {
   return trueX;
 }
 
-function getInnerProbeTargets(centerX) {
-  const innerProbes = PROBES
-    .filter(probe => probe.distanceAU <= 0.8)
-    .map(probe => ({ probe, x: getProbeVisualX(probe) }))
-    .sort((a, b) => a.x - b.x);
-
-  if (!innerProbes.length) return [];
-
-  const clusterStart = innerProbes[0].x - 48;
-  const clusterEnd = innerProbes[innerProbes.length - 1].x + 48;
-  if (centerX < clusterStart || centerX > clusterEnd) return [];
-
-  return innerProbes
-    .map(item => ({ ...item, dist: Math.abs(item.x - centerX) }))
-    .sort((a, b) => a.dist - b.dist)
-    .slice(0, 2);
+// Deterministic single-probe pick: first strict-minimum distance wins, so
+// ties resolve by PROBES' fixed ascending-distanceAU order (E04 T002 AC4).
+function findNearestProbe(focusX) {
+  let nearest = null;
+  let nearestDist = Infinity;
+  PROBES.forEach(probe => {
+    const dist = Math.abs(getProbeVisualX(probe) - focusX);
+    if (dist < nearestDist) {
+      nearestDist = dist;
+      nearest = probe;
+    }
+  });
+  return { probe: nearest, dist: nearestDist };
 }
 
 function getProbeFocusX() {
@@ -879,78 +919,22 @@ function getProbeFocusX() {
   return Math.max(canvasW * 0.34, sunEdge + 120);
 }
 
-function setPanelContent(panelEls, target, mode) {
-  panelEls.symbol.textContent = target.symbol;
-  panelEls.name.textContent = target.name;
-  panelEls.type.textContent = target.type;
-  panelEls.factSize.textContent = target.facts.size;
-  panelEls.factFlight.textContent = target.facts.flight;
-  panelEls.factSmell.textContent = target.facts.smell;
-
-  if (mode === 'probes') {
-    panelEls.icon1.textContent = '🚗';
-    panelEls.icon2.textContent = '🛰️';
-    panelEls.icon3.textContent = '💭';
-    panelEls.label1.textContent = 'SIZE VS HATCHBACK';
-    panelEls.label2.textContent = 'MISSION / LAUNCH DATE';
-    panelEls.label3.textContent = "HOW'S IT FEELING";
-    panelEls.panel.classList.add('probe-panel');
-  } else {
-    panelEls.icon1.textContent = '🌍';
-    panelEls.icon2.textContent = '✈️';
-    panelEls.icon3.textContent = '👃';
-    panelEls.label1.textContent = 'SIZE';
-    panelEls.label2.textContent = 'COMMERCIAL FLIGHT';
-    panelEls.label3.textContent = 'SMELLS LIKE';
-    panelEls.panel.classList.remove('probe-panel');
-  }
-}
-
-function showInfoCards(targets, mode) {
-  const primaryPanel = {
-    panel: infoPanel,
-    symbol: infoSymbol,
-    name: infoName,
-    type: infoType,
-    factSize,
-    factFlight,
-    factSmell,
-    icon1: factIcon1,
-    icon2: factIcon2,
-    icon3: factIcon3,
-    label1: factLabel1,
-    label2: factLabel2,
-    label3: factLabel3,
-  };
-  const secondaryPanel = {
-    panel: infoPanelSecondary,
-    symbol: info2Symbol,
-    name: info2Name,
-    type: info2Type,
-    factSize: info2FactSize,
-    factFlight: info2FactFlight,
-    factSmell: info2FactSmell,
-    icon1: info2FactIcon1,
-    icon2: info2FactIcon2,
-    icon3: info2FactIcon3,
-    label1: info2FactLabel1,
-    label2: info2FactLabel2,
-    label3: info2FactLabel3,
-  };
-
-  if (targets[0]) {
-    setPanelContent(primaryPanel, targets[0], mode);
-    infoPanel.classList.add('visible');
-  } else {
+// One reusable card for any planet, belt marker, or probe: SIZE, DISTANCE,
+// SMELLS LIKE, and SCREENS are the only facts shown (E04 T008 AC1/AC4).
+function showInfoCard(target, mode) {
+  if (!target) {
     infoPanel.classList.remove('visible');
+    return;
   }
-
-  if (targets[1]) {
-    setPanelContent(secondaryPanel, targets[1], mode);
-    infoPanelSecondary.classList.add('visible');
-  } else {
-    infoPanelSecondary.classList.remove('visible');
-  }
+  infoSymbol.textContent = target.symbol || '';
+  infoName.textContent = target.name;
+  infoType.textContent = target.type;
+  factSize.textContent = target.facts.size;
+  factDistance.textContent = target.facts.distance;
+  factSmell.textContent = target.facts.smellsLike;
+  factScreens.textContent = getScreensFactText(target);
+  infoPanel.classList.toggle('probe-panel', mode === 'probes');
+  infoPanel.classList.add('visible');
 }
 
 function getPlanetActualRadiusKm(planet) {
@@ -1365,32 +1349,15 @@ function checkInfoPanel() {
   if (displayMode === 'probes') {
     const focusX = getProbeFocusX();
     const threshold = Math.max(120, canvasW * 0.12);
-    const innerTargets = getInnerProbeTargets(focusX);
-    const inRange = innerTargets.length
-      ? innerTargets
-      : PROBES
-          .map(probe => {
-            const visualX = getProbeVisualX(probe);
-            return { probe, dist: Math.abs(visualX - focusX), x: visualX };
-          })
-          .filter(item => item.dist < threshold)
-          .sort((a, b) => a.dist - b.dist)
-          .slice(0, 2);
+    const { probe: nearest, dist } = findNearestProbe(focusX);
 
-    if (inRange.length) {
-      const orderedTargets = inRange
-        .sort((a, b) => a.x - b.x)
-        .map(item => item.probe);
-
-      const changed = orderedTargets.length !== activeProbes.length
-        || orderedTargets.some((probe, index) => activeProbes[index]?.id !== probe.id);
-
-      if (changed) {
-        activeProbes = orderedTargets;
-        showInfoCards(orderedTargets, 'probes');
+    if (nearest && dist < threshold) {
+      if (!activeProbe || activeProbe.id !== nearest.id) {
+        activeProbe = nearest;
+        showInfoCard(nearest, 'probes');
       }
-    } else {
-      activeProbes = [];
+    } else if (activeProbe) {
+      activeProbe = null;
       hideInfoPanel();
     }
     activePlanet = null;
@@ -1414,23 +1381,25 @@ function checkInfoPanel() {
   if (nearest && nearestDist < threshold) {
     if (nearest !== activePlanet) {
       activePlanet = nearest;
-      showInfoPanel(nearest);
+      showInfoCard(nearest, 'planets');
     }
-  } else {
-    if (activePlanet) {
-      activePlanet = null;
-      hideInfoPanel();
-    }
+  } else if (activePlanet) {
+    activePlanet = null;
+    hideInfoPanel();
   }
-}
-
-function showInfoPanel(planet) {
-  showInfoCards([planet], 'planets');
 }
 
 function hideInfoPanel() {
   infoPanel.classList.remove('visible');
-  infoPanelSecondary.classList.remove('visible');
+}
+
+// Keeps the SCREENS fact accurate across a viewport resize even when the
+// active target hasn't changed (its value depends on canvasW), mirroring
+// updateScaleLab()'s own every-frame refresh below.
+function updateInfoCardScreens() {
+  const target = displayMode === 'probes' ? activeProbe : activePlanet;
+  if (!target) return;
+  factScreens.textContent = getScreensFactText(target);
 }
 
 // ── RULER HUD ────────────────────────────────────────────────
@@ -1491,7 +1460,7 @@ function updateRuler() {
     ? `${(currentLM * 60).toFixed(1)} light-seconds`
     : `${currentLM.toFixed(2)} light-minutes`;
 
-  const focusTarget = displayMode === 'probes' ? activeProbes[0] : activePlanet;
+  const focusTarget = displayMode === 'probes' ? activeProbe : activePlanet;
   rulerFocus.textContent = focusTarget ? focusTarget.name : 'DEEP SPACE';
 
   rulerPlanets.querySelectorAll('.planet-notch').forEach(notch => {
@@ -1501,7 +1470,7 @@ function updateRuler() {
   });
 
   rulerPlanets.querySelectorAll('.probe-notch').forEach(notch => {
-    const isActiveProbe = activeProbes.some(probe => notch.dataset.probeId === probe.id);
+    const isActiveProbe = activeProbe != null && notch.dataset.probeId === activeProbe.id;
     notch.classList.toggle('active', displayMode === 'probes' && isActiveProbe);
     notch.classList.toggle('visible', displayMode === 'probes');
   });
@@ -1531,27 +1500,25 @@ function formatAu(au) {
   return `${Math.round(au).toLocaleString()} AU`;
 }
 
-function formatScreens(px) {
-  const screens = px / Math.max(1, canvasW);
-  if (screens < 10) return `${screens.toFixed(1)} screens`;
-  if (screens < 1000) return `${Math.round(screens).toLocaleString()} screens`;
-  return `${Math.round(screens).toLocaleString()} screens`;
+function formatScreens(screens) {
+  if (screens == null || !Number.isFinite(screens)) return 'N/A';
+  const rounded = screens < 10 ? Math.round(screens * 10) / 10 : Math.round(screens);
+  return rounded.toLocaleString();
 }
 
-function setMeterFill(el, value, max) {
-  const pct = max > 0 ? Math.max(0, Math.min(value / max, 1)) : 0;
-  el.style.width = `${pct * 100}%`;
+// Marker sits at its true readable/true-scale ratio, clamped so it never
+// collapses into the track edge or slides under the far-end label, even at
+// compression ratios in the thousands (E04 T007 AC3).
+const SCALE_METER_MARKER_MIN_PCT = 3;
+const SCALE_METER_MARKER_MAX_PCT = 90;
+
+function setScaleMeterMarker(readableScreens, trueScreens) {
+  const rawPct = trueScreens > 0 ? (readableScreens / trueScreens) * 100 : 0;
+  const pct = Math.min(SCALE_METER_MARKER_MAX_PCT, Math.max(SCALE_METER_MARKER_MIN_PCT, rawPct));
+  scaleReadoutMeterFill.style.left = `${pct}%`;
 }
 
 function syncScaleLabCollapse() {
-  const mobile = window.innerWidth <= 600;
-  if (!mobile) {
-    isScaleLabCollapsed = false;
-  } else if (!scaleLab.dataset.mobileInitialized) {
-    isScaleLabCollapsed = true;
-    scaleLab.dataset.mobileInitialized = 'true';
-  }
-
   scaleLab.classList.toggle('collapsed', isScaleLabCollapsed);
   scaleLabToggle.setAttribute('aria-expanded', String(!isScaleLabCollapsed));
   scaleLabToggleLabel.textContent = isScaleLabCollapsed ? 'SHOW' : 'HIDE';
@@ -1559,19 +1526,8 @@ function syncScaleLabCollapse() {
 
 function getScaleFocusTarget() {
   if (displayMode === 'probes') {
-    if (activeProbes[0]) return activeProbes[0];
-
-    const focusX = getProbeFocusX();
-    let nearest = PROBES[0] || null;
-    let nearestDist = Infinity;
-    PROBES.forEach(probe => {
-      const dist = Math.abs(getProbeVisualX(probe) - focusX);
-      if (dist < nearestDist) {
-        nearestDist = dist;
-        nearest = probe;
-      }
-    });
-    return nearest;
+    if (activeProbe) return activeProbe;
+    return findNearestProbe(getProbeFocusX()).probe;
   }
 
   if (activePlanet) return activePlanet;
@@ -1612,51 +1568,62 @@ function getTrueDistancePx(target) {
   return target?.distanceAU == null ? null : target.distanceAU * TRUE_SCALE_PX_PER_AU;
 }
 
+// Screens swiped to reach `target` at the readable (as-shown) scale versus
+// how many it would take at true, uncompressed scale. Shared by the info
+// card's SCREENS fact and the Scale Lab readout (STYLE-03) so both report
+// the same number from the same math instead of duplicating the division.
+function getScreensComparison(target) {
+  const readableDistancePx = getReadableDistancePx(target);
+  const trueDistancePx = getTrueDistancePx(target);
+  return {
+    readableScreens: (readableDistancePx || 0) / canvasW,
+    trueScreens: (trueDistancePx || 0) / canvasW,
+  };
+}
+
+// The Sun sits at distanceAU 0, so both screens counts are always 0 — stated
+// in plain language instead of a confusing "0 / 0" (T008 AC3).
+function getScreensFactText(target) {
+  if (target.distanceAU === 0) {
+    return 'The reference point — 0 screens either way';
+  }
+  const { readableScreens, trueScreens } = getScreensComparison(target);
+  return `${formatScreens(readableScreens)} swiped here · ${formatScreens(trueScreens)} at true scale`;
+}
+
 function updateScaleLab() {
   const target = getScaleFocusTarget();
   if (!target) return;
 
-  const readableDistancePx = getReadableDistancePx(target);
   const trueDistancePx = getTrueDistancePx(target);
   const readableDiameterPx = getReadableDiameterPx(target);
   const trueDiameterPx = getTrueDiameterPx(target);
   const sizeFactor = readableDiameterPx && trueDiameterPx
     ? readableDiameterPx / trueDiameterPx
     : null;
-  const distanceFactor = TRUE_SCALE_PX_PER_AU / PIXELS_PER_AU;
+  const { readableScreens, trueScreens } = getScreensComparison(target);
 
   scaleLabFocusName.textContent = target.name;
+
+  let sizeRatioFact = '';
+  if (sizeFactor != null) {
+    sizeRatioFact = sizeFactor >= 1
+      ? ` Rendered about ${sizeFactor.toFixed(1)}x larger than its Pluto-anchored physical scale.`
+      : ` Rendered at about ${(sizeFactor * 100).toFixed(0)}% of its Pluto-anchored physical size.`;
+  }
+
   if (trueDiameterPx == null) {
     scaleLabFocusMeta.textContent = `${target.type} uses symbolic sizing here. Distance remains anchored to real AU values.`;
   } else {
-    scaleLabFocusMeta.textContent = `If Pluto's radius is ${TRUE_SIZE_MIN_RADIUS}px, ${target.name} lands at ${formatPixels(trueDistancePx)} from the Sun.`;
+    scaleLabFocusMeta.textContent = `If Pluto's radius is ${TRUE_SIZE_MIN_RADIUS}px, ${target.name} lands at ${formatPixels(trueDistancePx)} from the Sun.${sizeRatioFact}`;
   }
 
-  const maxSize = Math.max(readableDiameterPx || 0, trueDiameterPx || 0, 1);
-  const maxDistance = Math.max(readableDistancePx || 0, trueDistancePx || 0, 1);
-  scaleLabTitle.textContent = 'Split View [Beta]';
+  scaleLabTitle.textContent = 'True Scale Readout';
   scaleViewSplit.classList.add('active');
-  scaleSplitCopy.textContent = `Same target, two systems. Left is the current readable composition. Right is one consistent physical scale using Pluto as the visibility floor.`;
-  scaleSplitReadableSize.textContent = readableDiameterPx == null ? 'SYMBOLIC' : formatPixels(readableDiameterPx);
-  scaleSplitTrueSize.textContent = trueDiameterPx == null ? 'N/A' : formatPixels(trueDiameterPx);
-  scaleSplitReadableDistance.textContent = readableDistancePx == null
-    ? 'N/A'
-    : `${formatPixels(readableDistancePx)} / ${formatScreens(readableDistancePx)}`;
-  scaleSplitTrueDistance.textContent = trueDistancePx == null
-    ? 'N/A'
-    : `${formatPixels(trueDistancePx)} / ${formatScreens(trueDistancePx)}`;
-  setMeterFill(scaleSplitReadableSizeFill, readableDiameterPx || 0, maxSize);
-  setMeterFill(scaleSplitTrueSizeFill, trueDiameterPx || 0, maxSize);
-  setMeterFill(scaleSplitReadableDistanceFill, readableDistancePx || 0, maxDistance);
-  setMeterFill(scaleSplitTrueDistanceFill, trueDistancePx || 0, maxDistance);
 
-  if (sizeFactor == null) {
-    scaleSplitSummary.textContent = `Distances are compressed by ${distanceFactor.toFixed(1)}x relative to this true scale. ${target.name} is a symbolic object here, so only the distance comparison is literal.`;
-  } else if (sizeFactor >= 1) {
-    scaleSplitSummary.textContent = `${target.name} is rendered about ${sizeFactor.toFixed(1)}x larger than this Pluto-anchored physical scale, while distances are compressed by ${distanceFactor.toFixed(1)}x.`;
-  } else {
-    scaleSplitSummary.textContent = `${target.name} is rendered at about ${(sizeFactor * 100).toFixed(0)}% of its Pluto-anchored physical size, while distances are compressed by ${distanceFactor.toFixed(1)}x.`;
-  }
+  scaleReadoutRatio.textContent = `You swiped about ${formatScreens(readableScreens)} screens to reach ${target.name}. At true scale, the same distance would take about ${formatScreens(trueScreens)} screens.`;
+  setScaleMeterMarker(readableScreens, trueScreens);
+  scaleReadoutMeterEndLabel.textContent = `${formatScreens(trueScreens)} screens at true scale`;
 }
 
 // ── CLOSING CARD ─────────────────────────────────────────────
@@ -1835,19 +1802,9 @@ function snapToNearestPlanet() {
 
 function snapToNearestProbe() {
   const focusX = getProbeFocusX();
-  let nearest = null;
-  let nearestDist = Infinity;
+  const { probe: nearest, dist } = findNearestProbe(focusX);
 
-  PROBES.forEach(probe => {
-    const sx = getProbeVisualX(probe);
-    const dist = Math.abs(sx - focusX);
-    if (dist < nearestDist) {
-      nearestDist = dist;
-      nearest = probe;
-    }
-  });
-
-  if (!nearest || nearestDist >= Math.max(120, canvasW * 0.12)) return;
+  if (!nearest || dist >= Math.max(120, canvasW * 0.12)) return;
 
   const targetVisualX = getProbeVisualX(nearest);
   const delta = targetVisualX - focusX;
@@ -1871,38 +1828,13 @@ function dismissIntro() {
   if (!introGone) {
     introGone = true;
     intro.classList.add('hidden');
-    tryStartAudio();
   }
 }
-
-// ── AUDIO ────────────────────────────────────────────────────
-function tryStartAudio() {
-  if (audioStarted) return;
-  audioStarted = true;
-  audio.volume = 0.18;
-  audio.loop = true;
-  audio.play().catch(() => {
-    // Autoplay blocked — that's fine, user can unmute
-  });
-}
-
-audio.addEventListener('ended', () => {
-  audio.currentTime = 0;
-  audio.play().catch(() => {});
-});
-
-muteBtn.addEventListener('click', () => {
-  isMuted = !isMuted;
-  audio.muted = isMuted;
-  muteBtn.classList.toggle('muted', isMuted);
-  muteIcon.textContent = isMuted ? '✕' : '♪';
-  if (!audioStarted) tryStartAudio();
-});
 
 function setDisplayMode(mode) {
   displayMode = mode;
   activePlanet = null;
-  activeProbes = [];
+  activeProbe = null;
   hideInfoPanel();
   modePlanetsBtn.classList.toggle('active', mode === 'planets');
   modePlanetsBtn.setAttribute('aria-pressed', String(mode === 'planets'));
@@ -1914,9 +1846,6 @@ modePlanetsBtn.addEventListener('click', () => setDisplayMode('planets'));
 modeProbesBtn.addEventListener('click', () => setDisplayMode('probes'));
 scaleLabToggle.addEventListener('click', () => {
   isScaleLabCollapsed = !isScaleLabCollapsed;
-  if (window.innerWidth <= 600) {
-    scaleLab.dataset.mobileInitialized = 'true';
-  }
   syncScaleLabCollapse();
 });
 
@@ -1969,6 +1898,7 @@ function loop(ts) {
 
   // Update HUD
   checkInfoPanel();
+  updateInfoCardScreens();
   updateRuler();
   updateScaleLab();
   checkClosingCard();
@@ -1981,7 +1911,6 @@ window.addEventListener('resize', () => {
   resize();
   buildStars();
   buildRulerNotches();
-  syncScaleLabCollapse();
 });
 
 window.addEventListener('wheel', onWheel, { passive: false });

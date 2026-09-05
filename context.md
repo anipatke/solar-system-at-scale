@@ -18,10 +18,9 @@ Use this file for compact implementation facts. Product intent lives in `.savepo
 
 ## Runtime files
 
-- `index.html`: page shell, ruler, Scale Lab, modes, two possible information panels, intro, closing state, audio markup, and analytics script.
+- `index.html`: page shell, ruler, Scale Lab, modes, two possible information panels, intro, closing state, and analytics script.
 - `style.css`: Atari-noir tokens, overlays, controls, panels, and responsive layout.
-- `main.js`: body/probe data, camera and input state, Canvas rendering, focus snapping, HUD, Scale Lab, cards, and audio behavior.
-- `audio/ambient.mp3`: current ambient loop; removal is planned in v1 E04.
+- `main.js`: body/probe data, camera and input state, Canvas rendering, focus snapping, HUD, Scale Lab, and cards.
 - `vercel.json`: SPA-style static rewrite and security response headers.
 
 ## Current scale model
@@ -29,16 +28,17 @@ Use this file for compact implementation facts. Product intent lives in `.savepo
 - Planet and belt positions use `PIXELS_PER_AU = 2000`.
 - Screen X is `distanceAU * PIXELS_PER_AU - cameraX + canvasW * 0.2`.
 - Planet radii use real size ratios relative to a viewport-height Sun, with a `1.5px` minimum and temporary snap enlargement.
+- Each planet's self-rotation speed derives from its real sidereal rotation period (NASA Planetary Fact Sheet) through one shared scale factor; direction follows the same source's sign convention.
 - The scale note discloses that body sizes do not share the distance-axis scale.
 - Moon systems are compressed local overlays based on parent-relative orbital distance; they are not literal AU-axis positions.
 
 ## Current content
 
 - Sun, Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, and the main asteroid belt.
-- Thirteen moons: Moon, Phobos, Deimos, Io, Europa, Ganymede, Callisto, Rhea, Titan, Titania, Oberon, Triton, and Charon.
+- Twenty-five moons: Moon, Phobos, Deimos, Io, Europa, Ganymede, Callisto, Amalthea, Himalia, Mimas, Enceladus, Tethys, Dione, Rhea, Titan, Iapetus, Miranda, Ariel, Umbriel, Titania, Oberon, Triton, Nereid, Proteus, and Charon.
 - Planet mode and probe mode share the ruler and focus system.
-- Information panels currently show three emoji-led facts; probe clusters may show two panels.
-- Ambient audio currently starts after the first journey interaction and has a bottom-right mute control.
+- One reusable information card shows at most two facts (SIZE, HIGHLIGHT) for the active planet, belt marker, or probe; probe mode shows a single nearest-probe card, not two.
+- The experience is silent: no ambient audio, playback control, or audio asset ships with v1.
 
 ## Current rendering
 
@@ -52,7 +52,7 @@ Use this file for compact implementation facts. Product intent lives in `.savepo
 - E01: replace generic and stale documentation with repo-specific sources of truth.
 - E02: add lightweight native WebGL spheres for every planet, recognisable materials, Saturn rings, focus sizing, and a 2D fallback.
 - E03: replace the belt haze with sparse reusable 3D asteroid instances and restrained depth/parallax.
-- E04: simplify to one two-fact card, calm moon motion, demote scale explanation, remove audio and its control, and validate responsiveness/accessibility.
+- E04: simplify to one two-fact card, calm moon motion, demote scale explanation, and validate responsiveness/accessibility. Ambient audio and its control are removed (T001).
 
 Planned behavior must not be described as current behavior until its epic is implemented and audited.
 

@@ -26,7 +26,6 @@ last_audited: never
 ├── rendering/planet-materials.js Body-specific WebGL material data (texture paths, ring data, emissive flag)
 ├── rendering/asteroid-belt-renderer.js WebGL setup, shared rock geometry, instanced draw buffers, resize/DPR, context recovery, frame API
 ├── assets/textures/              Pre-processed equirectangular planet/ring textures + PROVENANCE.md
-├── audio/ambient.mp3             Current ambient track; scheduled for removal in v1
 ├── vercel.json                   Static rewrites and response headers
 ├── context.md                    Compact implementation context for coding agents
 └── .savepoint/                   Product, design, release, task, policy, and audit records
@@ -67,7 +66,7 @@ If WebGL initialisation fails, the current 2D planet renderer remains the functi
 - Scroll idle triggers focus snapping; direct manipulation cancels an active snap.
 - The ruler communicates current distance and active target.
 - Planet mode and probe mode share the journey but use one active information card at a time in the v1 direction.
-- The main experience is silent. Existing ambient playback and mute UI are scheduled for removal in E04.
+- The main experience is silent; there is no ambient playback or mute control (removed in E04).
 - Reduced-motion mode should stop decorative rotation/twinkle and use immediate or shortened UI transitions without disabling navigation.
 
 ## Content model
