@@ -80,3 +80,13 @@ Health Check: Full
 - Browser scenario(s): no browser/Playwright available in this sandbox (checked: no chromium/chromium-browser/google-chrome binary, no cached Playwright browsers). All scenarios above are verified by static/code-path reasoning building on each individual E04 task's own already-recorded browser-scenario reasoning at `1440×900` and `360×800`. A live desktop+mobile pass (wheel/drag/touch traversal, both reduced-motion states, WebGL-available and WebGL-forced-unavailable) is recommended before this epic moves to `audit-pending`.
 - Known debt: no live-browser confirmation in this environment (carried from every E04 task); no live combined-layer frame-time trace (new to this task, noted above).
 - Waivers: none requested.
+
+## Drift Notes
+
+AC2's "Modes, snapping, one card, scale disclosure, belt passage, and closing
+state work normally" was validated against the moon system as it stood at
+the time (T003's floored pacing). A later, untracked moon-roster expansion
+removed that floor before this validation's `done` status was revisited, so
+the moon-pacing portion of this task's evidence became stale until repaired
+by `D004-moon-orbit-distance-and-speed-accuracy.md` (bounded floor/ceiling
+restored). No other AC in this task depended on moon pacing.

@@ -66,3 +66,12 @@ Health Check: Quick
 - Browser scenario(s): no browser/Playwright available in this sandbox (consistent with prior tasks in this epic). Verified instead by static/code-path reasoning: `updateRotation()`, `buildVisibleBodyViews()`, and `drawPlanet()` are unchanged and read the same `rotations[planet.id]`/`planet.retrograde` values before and after this change, so rotation direction/speed propagate identically to the WebGL and 2D fallback paths regardless of viewport; reduced-motion (`prefersReducedMotion.matches` early-return in `updateRotation()`), focus snapping, and mode switching code paths are untouched by this diff. A live-browser recheck at `1440×900` and `360×800` is recommended before this task is marked done.
 - Known debt: no live-browser confirmation of visible rotation direction/speed at the two target viewports in this environment; recommend a quick manual pass, particularly to confirm Uranus now visibly spins the corrected direction.
 - Waivers: none requested.
+
+## Drift Notes
+
+AC5 above ("T003's calmed/floor moon pacing behavior is unchanged by this
+task") was true when this task was marked done, but a later, untracked
+moon-roster expansion removed T003's floor entirely. That regression was
+unrelated to this task's own diff (rotation speed only) but is noted here
+for the record; see `T003`'s own Drift Notes and
+`D004-moon-orbit-distance-and-speed-accuracy.md` for the repair.

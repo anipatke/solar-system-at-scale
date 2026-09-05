@@ -342,13 +342,24 @@ const MOONS = [
 ];
 
 // One shared visual-period calculation for every moon (STYLE-03): 24 visual
-// seconds per real orbital day. This is a disclosed compression, not a
-// literal orbital simulation, but the relative speed differences stay intact
-// and the fast inner moons remain visibly faster than the outer ones.
+// seconds per real orbital day, bounded to [MIN, MAX] (D004). The floor keeps
+// the fastest inner moons (e.g. Phobos, Amalthea, Mimas — all under one real
+// day) distinguishable from a dead stop instead of all reading as instant.
+// The ceiling keeps the slowest outer moons (Iapetus, Himalia, Nereid — real
+// periods of 79-360 days) from becoming visually static for the length of a
+// normal viewing session; 420s is chosen to exactly preserve the ordering and
+// pacing this project already had audited for every other moon (T003's prior
+// roster topped out at Callisto's ~400.6s, unaffected by this ceiling). This
+// is a disclosed compression, not a literal orbital simulation: strictly
+// between the bounds, relative speed differences stay intact and faster
+// movers remain visibly faster than slower ones (SCALE-02).
 const MOON_VISUAL_SECONDS_PER_ORBITAL_DAY = 24;
+const MOON_MIN_VISUAL_ORBIT_SEC = 24;
+const MOON_MAX_VISUAL_ORBIT_SEC = 420;
 
 function getMoonVisualPeriodSec(moon) {
-  return moon.orbitalPeriodDays * MOON_VISUAL_SECONDS_PER_ORBITAL_DAY;
+  const raw = moon.orbitalPeriodDays * MOON_VISUAL_SECONDS_PER_ORBITAL_DAY;
+  return Math.min(MOON_MAX_VISUAL_ORBIT_SEC, Math.max(MOON_MIN_VISUAL_ORBIT_SEC, raw));
 }
 
 // ── ASTEROID BELT ────────────────────────────────────────────
@@ -1647,6 +1658,15 @@ function populateClosingCard() {
   closeNewHorizons.textContent = `~${(newHorizons / journeyAU).toFixed(1)}× farther than Pluto`;
 }
 
+// The `cameraX` value at which Pluto's screen position first crosses the
+// closing-card trigger (`plutoScreenX < canvasW * 0.1`). Shared by
+// checkClosingCard() and clampTarget()'s overscroll cap (D005) so both
+// agree on exactly where "past Pluto" begins.
+function getClosingThresholdCameraX() {
+  const plutoPx = PLANETS[PLANETS.length - 1].distanceAU * PIXELS_PER_AU;
+  return plutoPx + canvasW * 0.1;
+}
+
 function checkClosingCard() {
   const plutoPx = PLANETS[PLANETS.length - 1].distanceAU * PIXELS_PER_AU;
   const plutoScreenX = plutoPx - cameraX + canvasW * 0.2;
@@ -1772,9 +1792,17 @@ function applyMomentum(velocity) {
   momentumRaf = requestAnimationFrame(() => applyMomentum(velocity * 0.92));
 }
 
+// How far forward the camera may travel past the closing-card trigger
+// point, in fixed pixels independent of viewport width (D005). Small on
+// purpose: TOTAL_AU's own "+4 AU" breathing room (thousands of px) let a
+// visitor scroll far enough past Pluto that reversing through the fully
+// opaque #closing-card, with zero visual feedback, felt like a dead end.
+const CLOSING_MAX_OVERSCROLL_PX = 300;
+
 function clampTarget() {
   const maxScroll = getMaxCameraX();
-  targetCameraX = Math.max(0, Math.min(targetCameraX, maxScroll));
+  const closingCap = getClosingThresholdCameraX() + CLOSING_MAX_OVERSCROLL_PX;
+  targetCameraX = Math.max(0, Math.min(targetCameraX, maxScroll, closingCap));
 }
 
 function snapToNearestPlanet() {

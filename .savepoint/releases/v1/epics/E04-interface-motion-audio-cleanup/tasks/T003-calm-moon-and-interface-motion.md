@@ -64,3 +64,14 @@ Files edited: `main.js` (shared moon visual-period calculation + reduced-motion 
 - Browser scenario(s): static-serve smoke test (`python3 -m http.server`, desktop) confirms `style.css` ships the `prefers-reduced-motion: reduce` block and `main.js` is served with `Content-Type: text/javascript` and contains `getMoonVisualPeriodSec`; live confirmation of frozen moon/twinkle motion and instant (non-animated) overlay visibility under an emulated `prefers-reduced-motion: reduce` browser session, and of unaffected navigation/snapping/disclosure at `1440×900` and `360×800`, is deferred to the user since no headless browser is available in this environment
 - Known debt: no live-browser recording of the reduced-motion scenario or the two target viewports; consistent with T001/T002 precedent of accepting static-serve + code-inspection/numeric evidence over introducing a Playwright/headless-browser dependency for this project
 - Waivers: none
+
+## Drift Notes
+
+A later moon-roster expansion (untracked against this task) removed
+`MOON_MIN_VISUAL_ORBIT_SEC` entirely, so between that change and D004's
+repair, AC1 above ("minimum 24-second visual orbit") no longer matched
+runtime reality even though this task remained `status: done`. `D004`
+(`.savepoint/releases/v1/defects/D004-moon-orbit-distance-and-speed-accuracy.md`)
+restored a bounded floor/ceiling model (`MOON_MIN_VISUAL_ORBIT_SEC = 24`,
+new `MOON_MAX_VISUAL_ORBIT_SEC = 420`), so AC1's floor claim holds again;
+the added ceiling was not part of this task's original scope.
