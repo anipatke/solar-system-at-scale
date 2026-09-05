@@ -18,8 +18,16 @@
 import { getMaterialRecipe, getRingMaterial } from './planet-materials.js';
 
 // ── SHARED GEOMETRY CONSTANTS ───────────────────────────────
-const SPHERE_LAT_SEGMENTS = 16;
-const SPHERE_LON_SEGMENTS = 24;
+// D007: 16x24 left the Sun's silhouette visibly polygonal — it renders at a
+// fixed canvasH/2 radius (often 400-500+ screen px), far larger than any
+// planet's small fraction of that (SIZE_RATIO_TO_SUN), so the same shared
+// mesh needs enough segments for its largest, not its typical, on-screen
+// size. At the new SPHERE_LON_SEGMENTS the polygon-vs-circle deviation is
+// r*(1-cos(pi/48)) ~= 0.2% of radius (~1px at 500px) - well under a visibly
+// faceted edge - while vertex/index counts stay trivial for WebGL regardless
+// (STYLE-03: one shared mesh for every body, not a Sun-specific one).
+const SPHERE_LAT_SEGMENTS = 24;
+const SPHERE_LON_SEGMENTS = 48;
 const RING_SEGMENTS = 48;
 const RING_INNER_RATIO = 1.3;
 const RING_OUTER_RATIO = 2.2;
