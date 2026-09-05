@@ -15,7 +15,7 @@
 
 'use strict';
 
-import { getMaterialRecipe, getRingMaterial } from './planet-materials.js';
+import { getMaterialRecipe, getRingMaterial, getAllTexturedBodyIds } from './planet-materials.js';
 
 // ── SHARED GEOMETRY CONSTANTS ───────────────────────────────
 // D007: 16x24 left the Sun's silhouette visibly polygonal — it renders at a
@@ -359,6 +359,22 @@ export function createPlanetRenderer(canvas) {
     return ringTextures.get(bodyId);
   }
 
+  // D008: kicks off every known body's texture load immediately, instead of
+  // lazily on first appearance in frame()'s visible-bodies list. Without
+  // this, a planet scrolling into view for the first time would report
+  // allTexturesReady() === false for the handful of frames its image takes
+  // to fetch/decode, so the whole WebGL layer would fall back to the flat
+  // 2D canvas path for that stretch (ARCH-02's fallback contract working
+  // exactly as designed, just triggered by load latency rather than a real
+  // WebGL failure). Preloading means that latency happens once, at startup,
+  // off-screen, rather than visibly at the moment a body is approached.
+  function preloadAllTextures() {
+    getAllTexturedBodyIds().forEach(bodyId => {
+      getSphereTexture(bodyId);
+      getRingTexture(bodyId);
+    });
+  }
+
   function buildSphereResources() {
     sphereProgram = linkProgram(gl, SPHERE_VERTEX_SRC, SPHERE_FRAGMENT_SRC);
     sphereUniforms = {
@@ -419,6 +435,7 @@ export function createPlanetRenderer(canvas) {
 
     buildSphereResources();
     buildRingResources();
+    preloadAllTextures();
 
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
@@ -438,6 +455,7 @@ export function createPlanetRenderer(canvas) {
     try {
       buildSphereResources();
       buildRingResources();
+      preloadAllTextures();
       gl.enable(gl.DEPTH_TEST);
       gl.enable(gl.BLEND);
       gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);

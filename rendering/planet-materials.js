@@ -40,6 +40,15 @@ const RING_MATERIALS = {
   saturn: { texture: 'saturn_ring.png' },
 };
 
+// D008: lets the renderer eagerly request every known body's texture at
+// startup instead of waiting for each body to first scroll into view, so a
+// planet's real material is already loaded well before the 2D fallback
+// would otherwise show briefly as the approaching body enters the visible
+// range.
+export function getAllTexturedBodyIds() {
+  return Object.keys(RECIPES);
+}
+
 export function getMaterialRecipe(bodyId) {
   const raw = RECIPES[bodyId];
   return {
